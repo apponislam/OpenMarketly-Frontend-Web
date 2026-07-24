@@ -16,13 +16,28 @@ type ApiResponse<T> = {
     data: T;
 };
 
+export type ApiListResponse<T> = {
+    success: boolean;
+    message: string;
+    meta?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages?: number;
+        hasNext?: boolean;
+        hasPrev?: boolean;
+    };
+    data: T;
+};
+
 const faqApi = baseApi.injectEndpoints({
     overrideExisting: true,
     endpoints: (builder) => ({
-        getAllFaqs: builder.query<ApiResponse<IFaq[]>, void>({
-            query: () => ({
+        getAllFaqs: builder.query<ApiListResponse<IFaq[]>, Record<string, any> | void>({
+            query: (params) => ({
                 url: "/faqs",
                 method: "GET",
+                params: params || undefined,
             }),
             providesTags: [{ type: "Faq", id: "LIST" }],
         }),

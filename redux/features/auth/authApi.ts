@@ -127,7 +127,7 @@ const authApi = baseApi.injectEndpoints({
             invalidatesTags: ["User"],
         }),
 
-        changePassword: builder.mutation<ApiResponse<null>, any>({
+        changePassword: builder.mutation<ApiResponse<null>, { currentPassword: string; newPassword: string }>({
             query: (body) => ({
                 url: "/auth/change-password",
                 method: "POST",
@@ -175,26 +175,10 @@ const authApi = baseApi.injectEndpoints({
         }),
 
         // === Admin / Super Admin Routes ===
-        setUserPasswordByAdmin: builder.mutation<ApiResponse<null>, { userId: string; password?: string }>({
-            query: ({ userId, password }) => ({
-                url: `/auth/set-password/${userId}`,
-                method: "POST",
-                body: { password },
-            }),
-        }),
-
         deleteUserByAdmin: builder.mutation<ApiResponse<null>, { userId: string }>({
             query: ({ userId }) => ({
                 url: `/auth/${userId}`,
                 method: "DELETE",
-            }),
-        }),
-
-        changeUserRoleByAdmin: builder.mutation<ApiResponse<any>, { userId: string; role: Role }>({
-            query: ({ userId, role }) => ({
-                url: `/auth/change-role/${userId}`,
-                method: "PATCH",
-                body: { role },
             }),
         }),
     }),
@@ -219,7 +203,5 @@ export const {
     useResendEmailUpdateMutation,
     useDeleteAccountMutation,
     useAddFcmTokenMutation,
-    useSetUserPasswordByAdminMutation,
     useDeleteUserByAdminMutation,
-    useChangeUserRoleByAdminMutation,
 } = authApi;

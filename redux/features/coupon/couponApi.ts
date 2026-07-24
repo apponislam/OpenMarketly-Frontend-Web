@@ -3,15 +3,15 @@ import { baseApi } from "../../api/baseApi";
 export interface ICoupon {
     _id: string;
     code: string;
-    discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+    discountType: "PERCENTAGE" | "FIXED";
     discountValue: number;
-    minOrderAmount?: number;
     maxDiscountAmount?: number;
-    startDate: string;
-    endDate: string;
+    minOrderAmount?: number;
+    expiryDate: string;
     usageLimit?: number;
-    usedCount?: number;
+    usageCount?: number;
     isActive?: boolean;
+    isDeleted?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -22,18 +22,32 @@ type ApiResponse<T> = {
     data: T;
 };
 
+type ApiListResponse<T> = {
+    success: boolean;
+    message: string;
+    data: T;
+    meta?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages?: number;
+        hasNext?: boolean;
+        hasPrev?: boolean;
+    };
+};
+
 const couponApi = baseApi.injectEndpoints({
     overrideExisting: true,
     endpoints: (builder) => ({
-        validateCoupon: builder.query<ApiResponse<ICoupon>, string>({
-            query: (code) => ({
+        validateCoupon: builder.query<ApiResponse<{ couponId: string; code: string; discountType: string; discountValue: number; discountAmount: number; finalAmount: number }>, { code: string; orderAmount: number }>({
+            query: ({ code, orderAmount }) => ({
                 url: "/coupons/validate",
-                method: "GET",
-                params: { code },
+                method: "POST",
+                body: { code, orderAmount },
             }),
         }),
 
-        getAllCoupons: builder.query<ApiResponse<ICoupon[]>, void>({
+        getAllCoupons: builder.query<ApiListResponse<ICoupon[]>, void>({
             query: () => ({
                 url: "/coupons",
                 method: "GET",

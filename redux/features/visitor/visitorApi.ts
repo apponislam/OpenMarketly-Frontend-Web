@@ -1,11 +1,24 @@
 import { baseApi } from "../../api/baseApi";
 
 export interface IVisitorStats {
-    totalViews: number;
-    uniqueVisitors: number;
-    pageViewsBreakdown: {
-        pageUrl: string;
-        views: number;
+    todayTotalVisits: number;
+    todayUniqueVisitors: number;
+    todayWebVisits: number;
+    todayWebUnique: number;
+    todayAppVisits: number;
+    todayAppUnique: number;
+    todayPlatformBreakdown: Record<string, { visits: number; unique: number }>;
+    totalVisits: number;
+    totalUniqueVisitors: number;
+    allTimePlatformBreakdown: Record<string, { visits: number; unique: number }>;
+    dailyTrend: {
+        date: string;
+        totalVisits: number;
+        uniqueVisitors: number;
+        webVisits: number;
+        webUnique: number;
+        appVisits: number;
+        appUnique: number;
     }[];
 }
 
@@ -18,17 +31,20 @@ type ApiResponse<T> = {
 const visitorApi = baseApi.injectEndpoints({
     overrideExisting: true,
     endpoints: (builder) => ({
-        trackVisit: builder.mutation<ApiResponse<any>, { pageUrl: string; referrer?: string; userAgent?: string }>({
+        trackVisit: builder.mutation<ApiResponse<any>, { path: string; platform?: "WEB" | "ANDROID" | "IOS" | "APP" }>({
             query: (body) => ({
-                url: "/visitor/track",
+                url: "/visitors/track",
                 method: "POST",
-                body,
+                body: {
+                    path: body.path,
+                    platform: body.platform || "WEB",
+                },
             }),
         }),
 
-        getVisitorStats: builder.query<ApiResponse<IVisitorStats>, Record<string, any> | void>({
+        getVisitorStats: builder.query<ApiResponse<IVisitorStats>, { days?: number } | void>({
             query: (params) => ({
-                url: "/visitor/stats",
+                url: "/visitors/stats",
                 method: "GET",
                 params: params || undefined,
             }),
