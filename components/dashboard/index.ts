@@ -8,3 +8,4 @@ export { Modal } from "./Modal";
 export { DashboardCard } from "./DashboardCard";
 export { DashboardSidebar } from "./DashboardSidebar";
 export { DashboardTopbar } from "./DashboardTopbar";
+export { JoditEditorWrapper } from "./JoditEditorWrapper";
