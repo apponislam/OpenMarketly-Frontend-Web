@@ -57,12 +57,14 @@ export default function ProductsManagement() {
                 title="Products Management"
                 subtitle="View, add, edit, or delete items from your store."
                 action={
-                    <button
-                        onClick={() => router.push("/dashboard/products/create")}
-                        className="flex items-center justify-center gap-2 bg-[#2c1654] text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-[#2c1654]/90 transition-all duration-200 shadow-md shadow-[#2c1654]/10 cursor-pointer text-sm"
-                    >
-                        <Plus className="h-4.5 w-4.5 text-amber-400" /> Create New Product
-                    </button>
+                    user?.role === "SELLER" ? (
+                        <button
+                            onClick={() => router.push("/dashboard/products/create")}
+                            className="flex items-center justify-center gap-2 bg-[#2c1654] text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-[#2c1654]/90 transition-all duration-200 shadow-md shadow-[#2c1654]/10 cursor-pointer text-sm"
+                        >
+                            <Plus className="h-4.5 w-4.5 text-amber-400" /> Create New Product
+                        </button>
+                    ) : undefined
                 }
             />
 
@@ -124,6 +126,13 @@ export default function ProductsManagement() {
                             </td>
                             <td className="px-6 py-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
+                                    <button
+                                        onClick={() => router.push(`/dashboard/products/edit/${product._id}`)}
+                                        className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                                        title="Edit product"
+                                    >
+                                        <Edit className="h-4.5 w-4.5 text-[#2c1654]" />
+                                    </button>
                                     <button
                                         onClick={() => handleDeleteProduct(product._id)}
                                         className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer"

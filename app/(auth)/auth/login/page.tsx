@@ -8,6 +8,7 @@ import * as z from "zod";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
 import { useAppDispatch } from "@/redux/hooks";
 import { setUser } from "@/redux/features/auth/authSlice";
+import { Eye, EyeOff } from "lucide-react";
 
 const loginSchema = z.object({
     email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -21,6 +22,7 @@ export default function LoginPage() {
     const router = useRouter();
     const [login, { isLoading }] = useLoginMutation();
     const [errorMessage, setErrorMessage] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const {
         register,
@@ -94,13 +96,22 @@ export default function LoginPage() {
                             Forgot Password?
                         </Link>
                     </div>
-                    <input
-                        id="password"
-                        type="password"
-                        {...register("password")}
-                        placeholder="••••••••"
-                        className="w-full bg-[#1e1633] border border-transparent rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
-                    />
+                    <div className="relative">
+                        <input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            {...register("password")}
+                            placeholder="••••••••"
+                            className="w-full bg-[#1e1633] border border-transparent rounded-xl pl-4 pr-10 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                        >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    </div>
                     {errors.password && (
                         <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>
                     )}

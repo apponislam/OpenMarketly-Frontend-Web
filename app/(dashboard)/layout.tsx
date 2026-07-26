@@ -20,6 +20,8 @@ import {
     HelpCircle,
     ShieldCheck,
     FolderTree,
+    Users,
+    BarChart2,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -60,6 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const navigation = isAdmin
         ? [
               { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+              { name: "Users", href: "/dashboard/users", icon: Users },
               { name: "Categories", href: "/dashboard/categories", icon: FolderTree },
               { name: "Products", href: "/dashboard/products", icon: Package },
               { name: "Orders", href: "/dashboard/orders", icon: ShoppingCart },
@@ -71,6 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               { name: "Policies", href: "/dashboard/policies", icon: ShieldCheck },
               { name: "FAQs", href: "/dashboard/faqs", icon: HelpCircle },
               { name: "Activity Logs", href: "/dashboard/activity", icon: History },
+              { name: "Visitor Analytics", href: "/dashboard/visitor", icon: BarChart2 },
               { name: "Settings", href: "/dashboard/settings", icon: Settings },
           ]
         : [

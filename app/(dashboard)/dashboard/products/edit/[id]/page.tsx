@@ -1,16 +1,52 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useCreateProductMutation, IProductVariant } from "@/redux/features/product/productApi";
-import { useGetParentCategoriesQuery, useGetSubcategoriesQuery, ICategory } from "@/redux/features/category/categoryApi";
+import React, { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import {
+    useGetProductByIdQuery,
+    useUpdateProductMutation,
+    IProductVariant,
+} from "@/redux/features/product/productApi";
+import {
+    useGetParentCategoriesQuery,
+    useGetSubcategoriesQuery,
+    ICategory,
+} from "@/redux/features/category/categoryApi";
 import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
 import { DashboardPageHeader } from "@/components/dashboard";
-import { ArrowLeft, Package, Upload, Plus, Trash2, CheckCircle2, AlertCircle, Save, Tag, Layers, DollarSign, ImageIcon, Loader2, FolderTree, ChevronRight, Sparkles, Box, X, Star } from "lucide-react";
+import {
+    ArrowLeft,
+    Package,
+    Upload,
+    Plus,
+    Trash2,
+    CheckCircle2,
+    AlertCircle,
+    Save,
+    Tag,
+    Layers,
+    DollarSign,
+    ImageIcon,
+    Loader2,
+    FolderTree,
+    ChevronRight,
+    Sparkles,
+    Box,
+    X,
+    Star,
+} from "lucide-react";
 
-export default function CreateProductPage() {
+export default function EditProductPage() {
     const router = useRouter();
-    const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+    const params = useParams();
+    const productId = params.id as string;
+
+    const { data: productResponse, isLoading: isLoadingProduct } = useGetProductByIdQuery(productId, {
+        skip: !productId,
+    });
+    const product = productResponse?.data;
+
+    const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
     // Selected Final Category ID (at any depth)
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
@@ -39,11 +75,13 @@ export default function CreateProductPage() {
     // Interactive Badge List for Search Tags
     const [tags, setTags] = useState<string[]>([]);
 
-    // Product Variants Array (IProductVariant[])
+    // Product Variants Array
     const [variants, setVariants] = useState<IProductVariant[]>([]);
 
     // Dynamic Specifications Key-Value
-    const [specifications, setSpecifications] = useState<{ key: string; value: string }[]>([{ key: "Material", value: "" }]);
+    const [specifications, setSpecifications] = useState<{ key: string; value: string }[]>([
+        { key: "Material", value: "" },
+    ]);
 
     // Shipping & Physical Specs
     const [weight, setWeight] = useState("");
@@ -56,6 +94,42 @@ export default function CreateProductPage() {
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
     const [isUploadingGallery, setIsUploadingGallery] = useState(false);
     const [uploadingVariantIndex, setUploadingVariantIndex] = useState<number | null>(null);
+
+    // Pre-fill form when product data arrives
+    useEffect(() => {
+        if (product) {
+            setName(product.name || "");
+            setBrand(product.brand || "");
+            setUnit(product.unit || "Piece");
+            setPrice(product.price ? String(product.price) : "");
+            setOriginalPrice(product.originalPrice ? String(product.originalPrice) : "");
+            setDiscountPercentage(product.discountPercentage ? String(product.discountPercentage) : "");
+            setStockQuantity(product.stockQuantity !== undefined ? String(product.stockQuantity) : "0");
+            setShortDescription(product.shortDescription || "");
+            setDescription(product.description || "");
+            setThumbnail(product.thumbnail || "");
+            setThumbnailPreview(product.thumbnail || "");
+            setGalleryImages(product.images || []);
+            setTags(product.tags || []);
+            setVariants(product.variants || []);
+            setSpecifications(
+                product.specifications && product.specifications.length > 0
+                    ? product.specifications
+                    : [{ key: "Material", value: "" }]
+            );
+            setWeight(product.weight || "");
+            setDimensions(product.dimensions || "");
+            setWarranty(product.warranty || "");
+            setReturnPolicy(product.returnPolicy || "7 Days Replacement");
+
+            const catId = typeof product.category === "object" ? product.category._id : product.category;
+            const catName = typeof product.category === "object" ? product.category.name : "";
+            if (catId) {
+                setSelectedCategoryId(catId);
+                if (catName) setSelectedCategoryPath([catName]);
+            }
+        }
+    }, [product]);
 
     // Thumbnail Upload Handler
     const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -223,57 +297,83 @@ export default function CreateProductPage() {
 
         const validSpecs = specifications.filter((s) => s.key.trim() && s.value.trim());
 
-        // Extract unique colors and unique sizes arrays automatically from variant rows
-        const derivedColors = Array.from(new Set(variants.map((v) => (v.color ? v.color.trim() : "")).filter(Boolean)));
-        const derivedSizes = Array.from(new Set(variants.map((v) => (v.size ? v.size.trim() : "")).filter(Boolean)));
+        const derivedColors = Array.from(
+            new Set(variants.map((v) => (v.color ? v.color.trim() : "")).filter(Boolean))
+        );
+        const derivedSizes = Array.from(
+            new Set(variants.map((v) => (v.size ? v.size.trim() : "")).filter(Boolean))
+        );
 
         try {
-            await createProduct({
-                name: name.trim(),
-                brand: brand.trim() || undefined,
-                category: selectedCategoryId,
-                unit: unit.trim() || undefined,
-                price: Number(price),
-                originalPrice: originalPrice ? Number(originalPrice) : undefined,
-                discountPercentage: discountPercentage ? Number(discountPercentage) : undefined,
-                stockQuantity: Number(stockQuantity) || 0,
-                shortDescription: shortDescription.trim() || undefined,
-                description: description.trim(),
-                thumbnail: thumbnail || undefined,
-                images: galleryImages.length > 0 ? galleryImages : undefined,
-                colors: derivedColors.length > 0 ? derivedColors : undefined,
-                sizes: derivedSizes.length > 0 ? derivedSizes : undefined,
-                variants: variants.length > 0 ? variants : undefined,
-                specifications: validSpecs.length > 0 ? validSpecs : undefined,
-                weight: weight.trim() || undefined,
-                dimensions: dimensions.trim() || undefined,
-                warranty: warranty.trim() || undefined,
-                returnPolicy: returnPolicy.trim() || undefined,
-                tags: tags.length > 0 ? tags : undefined,
+            await updateProduct({
+                id: productId,
+                body: {
+                    name: name.trim(),
+                    brand: brand.trim() || undefined,
+                    category: selectedCategoryId,
+                    unit: unit.trim() || undefined,
+                    price: Number(price),
+                    originalPrice: originalPrice ? Number(originalPrice) : undefined,
+                    discountPercentage: discountPercentage ? Number(discountPercentage) : undefined,
+                    stockQuantity: Number(stockQuantity) || 0,
+                    shortDescription: shortDescription.trim() || undefined,
+                    description: description.trim(),
+                    thumbnail: thumbnail || undefined,
+                    images: galleryImages.length > 0 ? galleryImages : undefined,
+                    colors: derivedColors.length > 0 ? derivedColors : undefined,
+                    sizes: derivedSizes.length > 0 ? derivedSizes : undefined,
+                    variants: variants.length > 0 ? variants : undefined,
+                    specifications: validSpecs.length > 0 ? validSpecs : undefined,
+                    weight: weight.trim() || undefined,
+                    dimensions: dimensions.trim() || undefined,
+                    warranty: warranty.trim() || undefined,
+                    returnPolicy: returnPolicy.trim() || undefined,
+                    tags: tags.length > 0 ? tags : undefined,
+                },
             }).unwrap();
 
-            setStatusMsg({ type: "success", text: "Product published successfully! Redirecting..." });
+            setStatusMsg({ type: "success", text: "Product updated successfully! Redirecting..." });
             setTimeout(() => {
                 router.push("/dashboard/products");
             }, 1200);
         } catch (err: any) {
-            setStatusMsg({ type: "error", text: err?.data?.message || err?.message || "Failed to create product." });
+            setStatusMsg({ type: "error", text: err?.data?.message || err?.message || "Failed to update product." });
         }
     };
+
+    if (isLoadingProduct) {
+        return (
+            <div className="py-24 text-center text-purple-700 font-bold flex items-center justify-center gap-3">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-600" /> Loading product details...
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 w-full font-sans pb-24">
             {/* Header + Back Button */}
             <div className="flex items-center justify-between">
-                <button onClick={() => router.push("/dashboard/products")} className="flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-[#2c1654] transition-colors cursor-pointer bg-white px-4 py-2 rounded-xl border border-gray-200/80 shadow-sm">
+                <button
+                    onClick={() => router.push("/dashboard/products")}
+                    className="flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-[#2c1654] transition-colors cursor-pointer bg-white px-4 py-2 rounded-xl border border-gray-200/80 shadow-sm"
+                >
                     <ArrowLeft className="w-4 h-4 text-amber-500" /> Back to Products List
                 </button>
             </div>
 
-            <DashboardPageHeader title="Create New Product" subtitle="Publish a comprehensive, high-converting product listing to your marketplace storefront." />
+            <DashboardPageHeader
+                title={`Edit Product: ${product?.name || ""}`}
+                subtitle="Update product pricing, images, categories, variants, and specifications."
+            />
 
             {statusMsg && (
-                <div className={`p-4 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-sm ${statusMsg.type === "success" ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-800 border border-red-200"}`}>
+                <div
+                    className={`p-4 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-sm ${
+                        statusMsg.type === "success"
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            : "bg-red-50 text-red-800 border border-red-200"
+                    }`}
+                >
                     {statusMsg.type === "success" ? <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" /> : <AlertCircle className="w-5 h-5 shrink-0 text-red-600" />}
                     <span>{statusMsg.text}</span>
                 </div>
@@ -295,6 +395,7 @@ export default function CreateProductPage() {
                     </div>
 
                     <MultiLevelCategoryCascader
+                        initialCategoryId={selectedCategoryId}
                         onSelectCategory={(id, pathNames) => {
                             setSelectedCategoryId(id);
                             setSelectedCategoryPath(pathNames);
@@ -309,7 +410,9 @@ export default function CreateProductPage() {
                                 {selectedCategoryPath.map((part, idx) => (
                                     <React.Fragment key={idx}>
                                         {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-purple-400" />}
-                                        <span className="bg-white px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs font-semibold">{part}</span>
+                                        <span className="bg-white px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs font-semibold">
+                                            {part}
+                                        </span>
                                     </React.Fragment>
                                 ))}
                             </div>
@@ -331,7 +434,9 @@ export default function CreateProductPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="md:col-span-2">
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Product Title / Name *</label>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Product Title / Name *
+                            </label>
                             <input
                                 type="text"
                                 placeholder="e.g. Wireless Noise Cancelling Headphones Pro"
@@ -342,7 +447,9 @@ export default function CreateProductPage() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Brand Name</label>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Brand Name
+                            </label>
                             <input
                                 type="text"
                                 placeholder="e.g. Sony, Apple, Nike, Samsung"
@@ -353,8 +460,14 @@ export default function CreateProductPage() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Unit Measure</label>
-                            <select value={unit} onChange={(e) => setUnit(e.target.value)} className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#2c1654]">
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Unit Measure
+                            </label>
+                            <select
+                                value={unit}
+                                onChange={(e) => setUnit(e.target.value)}
+                                className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#2c1654]"
+                            >
                                 <option value="Piece">Piece</option>
                                 <option value="Box">Box</option>
                                 <option value="Pack">Pack</option>
@@ -380,7 +493,9 @@ export default function CreateProductPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Selling Price ($) *</label>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Selling Price ($) *
+                            </label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -392,7 +507,9 @@ export default function CreateProductPage() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Regular / Original Price ($)</label>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Regular / Original Price ($)
+                            </label>
                             <div className="relative">
                                 <input
                                     type="number"
@@ -403,14 +520,24 @@ export default function CreateProductPage() {
                                     className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#2c1654]"
                                 />
                                 {discountPercentage && Number(discountPercentage) > 0 && (
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-2.5 py-1 rounded-xl border border-emerald-200 shadow-2xs">⚡ {discountPercentage}% OFF</span>
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-2.5 py-1 rounded-xl border border-emerald-200 shadow-2xs">
+                                        ⚡ {discountPercentage}% OFF
+                                    </span>
                                 )}
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Available Base Stock *</label>
-                            <input type="number" placeholder="e.g. 50" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:border-[#2c1654]" />
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Available Base Stock *
+                            </label>
+                            <input
+                                type="number"
+                                placeholder="e.g. 50"
+                                value={stockQuantity}
+                                onChange={(e) => setStockQuantity(e.target.value)}
+                                className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:border-[#2c1654]"
+                            />
                         </div>
                     </div>
                 </div>
@@ -430,7 +557,9 @@ export default function CreateProductPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Main Cover Thumbnail Upload */}
                         <div className="space-y-2">
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Main Cover Photo</label>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                Main Cover Photo
+                            </label>
                             <div className="border-2 border-dashed border-purple-200 rounded-2xl p-4 text-center hover:border-[#2c1654] transition-colors relative flex flex-col items-center justify-center min-h-[160px] bg-[#faf9fc]">
                                 {isUploadingThumbnail ? (
                                     <div className="space-y-2 flex flex-col items-center">
@@ -446,18 +575,36 @@ export default function CreateProductPage() {
                                         <p className="text-xs text-gray-600 font-bold">Upload Cover Photo</p>
                                     </div>
                                 )}
-                                <input type="file" accept="image/*" onChange={handleThumbnailChange} disabled={isUploadingThumbnail} className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed" />
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleThumbnailChange}
+                                    disabled={isUploadingThumbnail}
+                                    className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                />
                             </div>
                         </div>
 
                         {/* Gallery Images Upload */}
                         <div className="md:col-span-2 space-y-3">
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Gallery Photos</label>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                Gallery Photos
+                            </label>
                             <div>
                                 <label className="px-5 py-3 bg-[#2c1654] hover:bg-[#3d2073] text-white font-bold text-xs rounded-2xl cursor-pointer transition-colors inline-flex items-center gap-2 shadow-md">
-                                    {isUploadingGallery ? <Loader2 className="w-4 h-4 animate-spin text-amber-400" /> : <Upload className="w-4 h-4 text-amber-400" />}
+                                    {isUploadingGallery ? (
+                                        <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                                    ) : (
+                                        <Upload className="w-4 h-4 text-amber-400" />
+                                    )}
                                     {isUploadingGallery ? "Uploading Photo..." : "+ Upload Gallery Photo"}
-                                    <input type="file" accept="image/*" onChange={handleGalleryFileUpload} disabled={isUploadingGallery} className="hidden" />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleGalleryFileUpload}
+                                        disabled={isUploadingGallery}
+                                        className="hidden"
+                                    />
                                 </label>
                             </div>
 
@@ -474,10 +621,20 @@ export default function CreateProductPage() {
                                                 </span>
                                             )}
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-1">
-                                                <button type="button" onClick={() => handleSetAsThumbnail(url)} className="p-1.5 bg-amber-400 text-[#2c1654] rounded-lg text-[10px] font-bold hover:bg-amber-300 transition-colors shadow" title="Set as Main Cover Photo">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSetAsThumbnail(url)}
+                                                    className="p-1.5 bg-amber-400 text-[#2c1654] rounded-lg text-[10px] font-bold hover:bg-amber-300 transition-colors shadow"
+                                                    title="Set as Main Cover Photo"
+                                                >
                                                     Set Cover
                                                 </button>
-                                                <button type="button" onClick={() => handleRemoveGalleryImage(idx)} className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow" title="Remove Image">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveGalleryImage(idx)}
+                                                    className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow"
+                                                    title="Remove Image"
+                                                >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
                                             </div>
@@ -503,7 +660,9 @@ export default function CreateProductPage() {
 
                     <div className="space-y-5">
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Short Summary Description</label>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Short Summary Description
+                            </label>
                             <input
                                 type="text"
                                 placeholder="Brief 1-2 sentence highlight..."
@@ -514,7 +673,9 @@ export default function CreateProductPage() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Detailed Product Description *</label>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Detailed Product Description *
+                            </label>
                             <textarea
                                 placeholder="Write complete details, features, package contents, and usage instructions..."
                                 value={description}
@@ -538,7 +699,11 @@ export default function CreateProductPage() {
                                 <p className="text-xs text-gray-500">Configure custom price, stock, color, size & photo for individual product variations.</p>
                             </div>
                         </div>
-                        <button type="button" onClick={handleAddVariantRow} className="px-4 py-2.5 bg-[#2c1654] text-white font-bold text-xs rounded-xl hover:bg-[#3d2073] transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm">
+                        <button
+                            type="button"
+                            onClick={handleAddVariantRow}
+                            className="px-4 py-2.5 bg-[#2c1654] text-white font-bold text-xs rounded-xl hover:bg-[#3d2073] transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        >
                             <Plus className="w-4 h-4 text-amber-400" /> Add Variant Row
                         </button>
                     </div>
@@ -548,8 +713,14 @@ export default function CreateProductPage() {
                             {variants.map((variant, idx) => (
                                 <div key={idx} className="p-5 rounded-2xl bg-[#faf9fc] border border-purple-100 space-y-4">
                                     <div className="flex items-center justify-between border-b border-purple-50 pb-3">
-                                        <span className="text-xs font-extrabold text-[#2c1654] uppercase tracking-wider">Variant Row #{idx + 1}</span>
-                                        <button type="button" onClick={() => handleRemoveVariantRow(idx)} className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer">
+                                        <span className="text-xs font-extrabold text-[#2c1654] uppercase tracking-wider">
+                                            Variant Row #{idx + 1}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveVariantRow(idx)}
+                                            className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
+                                        >
                                             <Trash2 className="w-3.5 h-3.5" /> Remove Row
                                         </button>
                                     </div>
@@ -608,9 +779,19 @@ export default function CreateProductPage() {
                                                     <img src={variant.image} alt="Variant" className="w-8 h-8 rounded-lg object-cover border shrink-0" />
                                                 ) : null}
                                                 <label className="px-2.5 py-2 bg-purple-50 hover:bg-purple-100 text-[#2c1654] font-bold text-[10px] rounded-xl cursor-pointer transition-colors shrink-0 flex items-center gap-1 border border-purple-100">
-                                                    {uploadingVariantIndex === idx ? <Loader2 className="w-3 h-3 animate-spin text-purple-600" /> : <Upload className="w-3 h-3 text-amber-500" />}
+                                                    {uploadingVariantIndex === idx ? (
+                                                        <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
+                                                    ) : (
+                                                        <Upload className="w-3 h-3 text-amber-500" />
+                                                    )}
                                                     {uploadingVariantIndex === idx ? "Uploading..." : "Upload Photo"}
-                                                    <input type="file" accept="image/*" onChange={(e) => handleVariantImageUpload(idx, e)} disabled={uploadingVariantIndex === idx} className="hidden" />
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => handleVariantImageUpload(idx, e)}
+                                                        disabled={uploadingVariantIndex === idx}
+                                                        className="hidden"
+                                                    />
                                                 </label>
                                             </div>
                                         </div>
@@ -639,7 +820,11 @@ export default function CreateProductPage() {
                                 <p className="text-xs text-gray-500">Define technical parameters like Material, Battery Life, Connectivity, etc.</p>
                             </div>
                         </div>
-                        <button type="button" onClick={handleAddSpecRow} className="text-xs font-bold text-[#2c1654] hover:underline flex items-center gap-1 cursor-pointer">
+                        <button
+                            type="button"
+                            onClick={handleAddSpecRow}
+                            className="text-xs font-bold text-[#2c1654] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
                             <Plus className="w-3.5 h-3.5 text-amber-500" /> Add Spec Row
                         </button>
                     </div>
@@ -662,7 +847,11 @@ export default function CreateProductPage() {
                                     className="w-1/2 px-4 py-2.5 bg-[#f8f7fc] border border-purple-100 rounded-xl text-sm font-medium focus:outline-none focus:border-[#2c1654]"
                                 />
                                 {specifications.length > 1 && (
-                                    <button type="button" onClick={() => handleRemoveSpecRow(idx)} className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveSpecRow(idx)}
+                                        className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                                    >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 )}
@@ -685,28 +874,60 @@ export default function CreateProductPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Weight (e.g. 250g)</label>
-                            <input type="text" placeholder="250g" value={weight} onChange={(e) => setWeight(e.target.value)} className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium focus:outline-none focus:border-[#2c1654]" />
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Weight (e.g. 250g)
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="250g"
+                                value={weight}
+                                onChange={(e) => setWeight(e.target.value)}
+                                className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium focus:outline-none focus:border-[#2c1654]"
+                            />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Dimensions (e.g. 15x10x5 cm)</label>
-                            <input type="text" placeholder="15x10x5 cm" value={dimensions} onChange={(e) => setDimensions(e.target.value)} className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium focus:outline-none focus:border-[#2c1654]" />
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Dimensions (e.g. 15x10x5 cm)
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="15x10x5 cm"
+                                value={dimensions}
+                                onChange={(e) => setDimensions(e.target.value)}
+                                className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium focus:outline-none focus:border-[#2c1654]"
+                            />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Warranty Info</label>
-                            <input type="text" placeholder="e.g. 1 Year Brand Warranty" value={warranty} onChange={(e) => setWarranty(e.target.value)} className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium focus:outline-none focus:border-[#2c1654]" />
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Warranty Info
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="e.g. 1 Year Brand Warranty"
+                                value={warranty}
+                                onChange={(e) => setWarranty(e.target.value)}
+                                className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium focus:outline-none focus:border-[#2c1654]"
+                            />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Return Policy</label>
-                            <input type="text" placeholder="7 Days Replacement" value={returnPolicy} onChange={(e) => setReturnPolicy(e.target.value)} className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium focus:outline-none focus:border-[#2c1654]" />
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Return Policy
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="7 Days Replacement"
+                                value={returnPolicy}
+                                onChange={(e) => setReturnPolicy(e.target.value)}
+                                className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium focus:outline-none focus:border-[#2c1654]"
+                            />
                         </div>
                     </div>
                 </div>
 
-                {/* 9. Storefront Tags */}
+                {/* 9. Storefront Search Keywords */}
                 <div className="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100/80 shadow-sm space-y-6">
                     <div className="flex items-center gap-3 border-b border-purple-50 pb-4">
                         <div className="w-10 h-10 rounded-2xl bg-[#2c1654] text-amber-400 flex items-center justify-center font-bold">
@@ -726,14 +947,24 @@ export default function CreateProductPage() {
 
                 {/* Sticky Bottom Action Bar */}
                 <div className="sticky bottom-6 z-30 bg-white/90 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-purple-100 shadow-xl flex items-center justify-between gap-4">
-                    <p className="text-xs font-semibold text-gray-500">{selectedCategoryId ? "Category selected cleanly." : "Please choose a category before publishing."}</p>
+                    <p className="text-xs font-semibold text-gray-500">
+                        {selectedCategoryId ? "Category selected cleanly." : "Please choose a category before saving."}
+                    </p>
                     <div className="flex items-center gap-3">
-                        <button type="button" onClick={() => router.push("/dashboard/products")} className="px-6 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                        <button
+                            type="button"
+                            onClick={() => router.push("/dashboard/products")}
+                            className="px-6 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
                             Cancel
                         </button>
-                        <button type="submit" disabled={isCreating || isUploadingThumbnail || isUploadingGallery} className="px-8 py-3.5 bg-[#2c1654] hover:bg-[#3d2073] text-white font-bold text-xs rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50">
+                        <button
+                            type="submit"
+                            disabled={isUpdating || isUploadingThumbnail || isUploadingGallery}
+                            className="px-8 py-3.5 bg-[#2c1654] hover:bg-[#3d2073] text-white font-bold text-xs rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                        >
                             <Save className="w-4 h-4 text-amber-400" />
-                            {isCreating ? "Publishing Product..." : "Publish Product"}
+                            {isUpdating ? "Saving Changes..." : "Save Product Changes"}
                         </button>
                     </div>
                 </div>
@@ -742,7 +973,7 @@ export default function CreateProductPage() {
     );
 }
 
-// === Interactive Badge Tag Input Component (Generates Badges on Comma / Enter) ===
+// === Interactive Badge Tag Input Component ===
 interface BadgeTagInputProps {
     items: string[];
     onChange: (items: string[]) => void;
@@ -799,7 +1030,11 @@ function BadgeTagInput({ items, onChange, placeholder, colorScheme = "purple" }:
                     onKeyDown={handleKeyDown}
                     className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#2c1654]"
                 />
-                <button type="button" onClick={addTag} className="px-4 py-3 bg-purple-100 text-[#2c1654] font-bold text-xs rounded-2xl hover:bg-purple-200 transition-colors shrink-0 cursor-pointer">
+                <button
+                    type="button"
+                    onClick={addTag}
+                    className="px-4 py-3 bg-purple-100 text-[#2c1654] font-bold text-xs rounded-2xl hover:bg-purple-200 transition-colors shrink-0 cursor-pointer"
+                >
                     Add
                 </button>
             </div>
@@ -807,9 +1042,20 @@ function BadgeTagInput({ items, onChange, placeholder, colorScheme = "purple" }:
             {items.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap pt-1">
                     {items.map((item, idx) => (
-                        <span key={idx} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${colorScheme === "amber" ? "bg-amber-50 text-amber-900 border-amber-200" : "bg-purple-50 text-[#2c1654] border-purple-200"}`}>
+                        <span
+                            key={idx}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                                colorScheme === "amber"
+                                    ? "bg-amber-50 text-amber-900 border-amber-200"
+                                    : "bg-purple-50 text-[#2c1654] border-purple-200"
+                            }`}
+                        >
                             <span>{item}</span>
-                            <button type="button" onClick={() => handleRemoveTag(idx)} className="p-0.5 rounded-md hover:bg-black/10 transition-colors cursor-pointer">
+                            <button
+                                type="button"
+                                onClick={() => handleRemoveTag(idx)}
+                                className="p-0.5 rounded-md hover:bg-black/10 transition-colors cursor-pointer"
+                            >
                                 <X className="w-3.5 h-3.5" />
                             </button>
                         </span>
@@ -822,10 +1068,11 @@ function BadgeTagInput({ items, onChange, placeholder, colorScheme = "purple" }:
 
 // === Recursive Dynamic Category Cascader Component ===
 interface MultiLevelCategoryCascaderProps {
+    initialCategoryId?: string;
     onSelectCategory: (id: string, pathNames: string[]) => void;
 }
 
-function MultiLevelCategoryCascader({ onSelectCategory }: MultiLevelCategoryCascaderProps) {
+function MultiLevelCategoryCascader({ initialCategoryId, onSelectCategory }: MultiLevelCategoryCascaderProps) {
     const [chain, setChain] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<ICategory[]>([]);
 
@@ -840,7 +1087,7 @@ function MultiLevelCategoryCascader({ onSelectCategory }: MultiLevelCategoryCasc
             if (lastCat) {
                 onSelectCategory(
                     lastCat._id,
-                    newCats.map((c) => c.name),
+                    newCats.map((c) => c.name)
                 );
             } else {
                 onSelectCategory("", []);
@@ -855,17 +1102,28 @@ function MultiLevelCategoryCascader({ onSelectCategory }: MultiLevelCategoryCasc
         setSelectedCategories(newCats);
         onSelectCategory(
             cat._id,
-            newCats.map((c) => c.name),
+            newCats.map((c) => c.name)
         );
     };
 
     return (
         <div className="space-y-4">
             <div className="flex flex-wrap gap-4 items-start">
-                <CascaderLevelSelect parentId={null} levelDepth={0} selectedId={chain[0] || ""} onSelect={(cat) => handleSelectLevel(cat, 0)} />
+                <CascaderLevelSelect
+                    parentId={null}
+                    levelDepth={0}
+                    selectedId={chain[0] || ""}
+                    onSelect={(cat) => handleSelectLevel(cat, 0)}
+                />
 
                 {chain.map((parentId, depth) => (
-                    <CascaderLevelSelect key={`${parentId}_${depth}`} parentId={parentId} levelDepth={depth + 1} selectedId={chain[depth + 1] || ""} onSelect={(cat) => handleSelectLevel(cat, depth + 1)} />
+                    <CascaderLevelSelect
+                        key={`${parentId}_${depth}`}
+                        parentId={parentId}
+                        levelDepth={depth + 1}
+                        selectedId={chain[depth + 1] || ""}
+                        onSelect={(cat) => handleSelectLevel(cat, depth + 1)}
+                    />
                 ))}
             </div>
         </div>
@@ -889,7 +1147,7 @@ function CascaderLevelSelect({ parentId, levelDepth, selectedId, onSelect }: Cas
         skip: isRoot || !parentId,
     });
 
-    const categoriesList: ICategory[] = isRoot ? parentsRes?.data || [] : subsRes?.data || [];
+    const categoriesList: ICategory[] = isRoot ? (parentsRes?.data || []) : (subsRes?.data || []);
     const isLoading = isRoot ? isLoadingParents : isLoadingSubs;
 
     if (!isRoot && !isLoading && categoriesList.length === 0) {
@@ -911,7 +1169,9 @@ function CascaderLevelSelect({ parentId, levelDepth, selectedId, onSelect }: Cas
                 }}
                 className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-200 rounded-2xl text-sm font-semibold text-gray-900 focus:outline-none focus:border-[#2c1654] cursor-pointer disabled:opacity-50"
             >
-                <option value="">{isRoot ? "-- Select Main Category --" : `-- Select Subcategory --`}</option>
+                <option value="">
+                    {isRoot ? "-- Select Main Category --" : `-- Select Subcategory --`}
+                </option>
                 {categoriesList.map((cat) => (
                     <option key={cat._id} value={cat._id}>
                         {cat.name}

@@ -7,6 +7,7 @@ import {
     useResetPasswordMutation,
     useResendOtpMutation,
 } from "@/redux/features/auth/authApi";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function ForgotPasswordPage() {
     const [forgotPassword, { isLoading: isSendingOtp }] = useForgotPasswordMutation();
@@ -19,8 +20,12 @@ export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
     const [otp, setOtp] = useState("");
     const [resetToken, setResetToken] = useState("");
+    
+    // Form inputs
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [timer, setTimer] = useState(0);
 
     useEffect(() => {
@@ -246,30 +251,48 @@ export default function ForgotPasswordPage() {
                             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2" htmlFor="newPassword">
                                 New Password
                             </label>
-                            <input
-                                id="newPassword"
-                                type="password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full bg-[#1e1633] border border-transparent rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
-                                required
-                            />
+                            <div className="relative">
+                                <input
+                                    id="newPassword"
+                                    type={showNewPassword ? "text" : "password"}
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full bg-[#1e1633] border border-transparent rounded-xl pl-4 pr-10 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowNewPassword(!showNewPassword)}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                                >
+                                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </div>
 
                         <div>
                             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2" htmlFor="confirmPassword">
                                 Confirm Password
                             </label>
-                            <input
-                                id="confirmPassword"
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full bg-[#1e1633] border border-transparent rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
-                                required
-                            />
+                            <div className="relative">
+                                <input
+                                    id="confirmPassword"
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full bg-[#1e1633] border border-transparent rounded-xl pl-4 pr-10 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                                >
+                                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </div>
 
                         <button

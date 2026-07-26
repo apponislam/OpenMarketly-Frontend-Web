@@ -8,6 +8,7 @@ import * as z from "zod";
 import { useRegisterMutation } from "@/redux/features/auth/authApi";
 import { useAppDispatch } from "@/redux/hooks";
 import { setUser } from "@/redux/features/auth/authSlice";
+import { Eye, EyeOff } from "lucide-react";
 
 const registerSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -28,6 +29,7 @@ export default function RegisterPage() {
 
     const [step, setStep] = useState(1);
     const [errorMessage, setErrorMessage] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     // Custom state for file upload
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -191,13 +193,22 @@ export default function RegisterPage() {
                         <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2" htmlFor="password">
                             Password
                         </label>
+                    <div className="relative">
                         <input
                             id="password"
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             {...registerField("password")}
                             placeholder="••••••••"
-                            className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
+                            className="w-full bg-[#1e1633] border border-white/10 rounded-xl pl-4 pr-10 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                        >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    </div>
                         {errors.password && (
                             <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>
                         )}

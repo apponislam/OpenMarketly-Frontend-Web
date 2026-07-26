@@ -197,7 +197,7 @@ export default function ShopPage() {
 
                             <ShopPagination
                                 currentPage={page}
-                                totalPages={meta?.totalPage || 1}
+                                totalPages={meta?.totalPages || 1}
                                 onPageChange={setPage}
                             />
                         </div>
