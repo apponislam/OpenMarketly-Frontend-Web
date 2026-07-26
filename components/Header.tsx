@@ -21,7 +21,7 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
                 <div className="flex items-center gap-3 lg:gap-5">
                     {/* Logo */}
-                    <button onClick={onLogoClick} className="flex items-center gap-2.5 shrink-0">
+                    <button onClick={onLogoClick} className="flex items-center gap-2.5 shrink-0 cursor-pointer">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #2c1654, #4a2b8c)" }}>
                             <span className="text-white font-black text-xs tracking-tighter">OM</span>
                         </div>
@@ -34,7 +34,7 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
                     <div className="flex-1 flex items-center bg-[#f8f7fc] border border-purple-100 rounded-xl overflow-hidden focus-within:border-[#2c1654] focus-within:ring-2 focus-within:ring-purple-100 transition-all">
                         <Search className="w-4 h-4 text-gray-400 ml-3.5 shrink-0" />
                         <input type="text" placeholder="Search for products, brands and more..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent px-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 outline-none" />
-                        <button onClick={onShopClick} className="text-white px-5 py-2.5 text-sm font-bold transition-opacity hover:opacity-90" style={{ backgroundColor: "#2c1654" }}>
+                        <button onClick={onShopClick} className="text-white px-5 py-2.5 text-sm font-bold transition-opacity hover:opacity-90 cursor-pointer" style={{ backgroundColor: "#2c1654" }}>
                             Search
                         </button>
                     </div>
@@ -47,12 +47,12 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
                             { icon: User, label: "Sign In", action: () => router.push("/auth/login") },
                             { icon: Heart, label: "Wishlist", action: undefined },
                         ].map(({ icon: Icon, label, action }) => (
-                            <button key={label} onClick={action} className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl hover:bg-purple-50 transition-colors group">
+                            <button key={label} onClick={action} className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl hover:bg-purple-50 transition-colors group ${action ? "cursor-pointer" : "cursor-default"}`}>
                                 <Icon className="w-5 h-5 text-gray-500 group-hover:text-[#2c1654] transition-colors" />
                                 <span className="text-[10px] text-gray-500 group-hover:text-[#2c1654] leading-none transition-colors">{label}</span>
                             </button>
                         ))}
-                        <button onClick={onCartOpen} className="relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl hover:bg-purple-50 transition-colors group">
+                        <button onClick={onCartOpen} className="relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl hover:bg-purple-50 transition-colors group cursor-pointer">
                             <ShoppingCart className="w-5 h-5 text-gray-500 group-hover:text-[#2c1654] transition-colors" />
                             <span className="text-[10px] text-gray-500 group-hover:text-[#2c1654] leading-none transition-colors">Cart</span>
                             {cartCount > 0 && (
@@ -65,7 +65,7 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
 
                     {/* Mobile */}
                     <div className="flex md:hidden items-center gap-2">
-                        <button onClick={onCartOpen} className="relative p-2">
+                        <button onClick={onCartOpen} className="relative p-2 cursor-pointer">
                             <ShoppingCart className="w-6 h-6 text-gray-700" />
                             {cartCount > 0 && (
                                 <span className="absolute top-1 right-1 w-4 h-4 text-white text-[9px] font-black rounded-full flex items-center justify-center" style={{ backgroundColor: "#c8960c" }}>
@@ -73,7 +73,7 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
                                 </span>
                             )}
                         </button>
-                        <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 rounded-xl hover:bg-purple-50">
+                        <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 rounded-xl hover:bg-purple-50 cursor-pointer">
                             {menuOpen ? <X className="w-5 h-5 text-gray-700" /> : <Menu className="w-5 h-5 text-gray-700" />}
                         </button>
                     </div>
@@ -87,7 +87,7 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
                         { icon: Package, label: "My Orders", action: undefined },
                         { icon: MapPin, label: "Change Location", action: undefined },
                     ].map(({ icon: Icon, label, action }) => (
-                        <button key={label} onClick={action} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-purple-50 text-sm font-semibold text-gray-700 transition-colors">
+                        <button key={label} onClick={action} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-purple-50 text-sm font-semibold text-gray-700 transition-colors ${action ? "cursor-pointer" : "cursor-default"}`}>
                             <Icon className="w-5 h-5 text-[#2c1654]" /> {label}
                         </button>
                     ))}
