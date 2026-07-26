@@ -54,9 +54,9 @@ export function Footer({ onLogoClick }: FooterProps) {
                     <div>
                         <h4 className="text-white font-black mb-4 text-sm">Customer Support</h4>
                         <ul className="space-y-2.5">
-                            <li><Link href="/dashboard/faqs" className="text-sm text-gray-500 hover:text-white transition-colors">Help Center & FAQs</Link></li>
-                            <li><Link href="/dashboard/disputes" className="text-sm text-gray-500 hover:text-white transition-colors">Disputes & Tickets</Link></li>
-                            <li><Link href="/dashboard/feedbacks" className="text-sm text-gray-500 hover:text-white transition-colors">Submit Feedback</Link></li>
+                            <li><Link href="/faqs" className="text-sm text-gray-500 hover:text-white transition-colors">Help Center & FAQs</Link></li>
+                            <li><Link href="/disputes" className="text-sm text-gray-500 hover:text-white transition-colors">Disputes & Tickets</Link></li>
+                            <li><Link href="/feedback" className="text-sm text-gray-500 hover:text-white transition-colors">Submit Feedback</Link></li>
                         </ul>
                     </div>
                 </div>
