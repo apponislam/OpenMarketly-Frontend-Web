@@ -31,6 +31,7 @@ const authApi = baseApi.injectEndpoints({
                 method: "POST",
                 body: userInfo,
             }),
+            invalidatesTags: ["User"],
         }),
 
         login: builder.mutation<LoginRegisterResponse, any>({
@@ -39,6 +40,7 @@ const authApi = baseApi.injectEndpoints({
                 method: "POST",
                 body: userInfo,
             }),
+            invalidatesTags: ["User"],
         }),
 
         verifyEmail: builder.query<ApiResponse<null>, { email: string; token?: string; otp?: string }>({
@@ -104,6 +106,7 @@ const authApi = baseApi.injectEndpoints({
                 url: "/auth/me",
                 method: "GET",
             }),
+            providesTags: ["User"],
         }),
 
         logout: builder.mutation<ApiResponse<null>, void>({
@@ -112,6 +115,7 @@ const authApi = baseApi.injectEndpoints({
                 method: "POST",
                 credentials: "include",
             }),
+            invalidatesTags: ["User"],
         }),
 
         updateProfile: builder.mutation<ApiResponse<TUser>, Partial<TUser>>({
@@ -120,6 +124,7 @@ const authApi = baseApi.injectEndpoints({
                 method: "PATCH",
                 body,
             }),
+            invalidatesTags: ["User"],
         }),
 
         changePassword: builder.mutation<ApiResponse<null>, any>({
