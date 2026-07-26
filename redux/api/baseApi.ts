@@ -80,6 +80,7 @@ export const baseApi = createApi({
         "Visitor",
         "Wishlist",
         "Withdraw",
+        "Dashboard",
     ],
     endpoints: () => ({}),
 });
