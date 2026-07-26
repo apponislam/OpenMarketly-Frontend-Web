@@ -74,6 +74,32 @@ export default function CreateProductPage() {
     // Messages
     const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+    // Recursive helper to render infinite multi-level categories in select dropdown
+    const getParentId = (c: any) => {
+        if (!c.parentCategory) return null;
+        return typeof c.parentCategory === "object" ? c.parentCategory._id : c.parentCategory;
+    };
+
+    const renderRecursiveCategoryOptions = (parentId: string | null = null, depth: number = 0): React.ReactNode[] => {
+        const children = categories.filter((c) => getParentId(c) === parentId);
+        let options: React.ReactNode[] = [];
+
+        children.forEach((cat) => {
+            const indent = "\u00A0\u00A0".repeat(depth * 3);
+            const icon = depth === 0 ? "📁 " : "└── 📂 ";
+            options.push(
+                <option key={cat._id} value={cat._id}>
+                    {indent}{icon}{cat.name}
+                </option>
+            );
+
+            const subOptions = renderRecursiveCategoryOptions(cat._id, depth + 1);
+            options = options.concat(subOptions);
+        });
+
+        return options;
+    };
+
     // Image Upload Handlers
     const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -204,7 +230,7 @@ export default function CreateProductPage() {
     };
 
     return (
-        <div className="space-y-8 w-full font-sans max-w-6xl mx-auto pb-16">
+        <div className="space-y-8 w-full font-sans pb-16">
             {/* Header + Back Button */}
             <div className="flex items-center justify-between">
                 <button
@@ -252,19 +278,15 @@ export default function CreateProductPage() {
 
                         <div>
                             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                Category *
+                                Category / Subcategory *
                             </label>
                             <select
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[#2c1654]"
                             >
-                                <option value="">-- Select Category --</option>
-                                {categories.map((cat) => (
-                                    <option key={cat._id} value={cat._id}>
-                                        {cat.name}
-                                    </option>
-                                ))}
+                                <option value="">-- Select Category / Subcategory --</option>
+                                {renderRecursiveCategoryOptions()}
                             </select>
                         </div>
 
