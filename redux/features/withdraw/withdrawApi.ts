@@ -2,15 +2,28 @@ import { baseApi } from "../../api/baseApi";
 
 export interface IWithdrawRequest {
     _id: string;
-    sellerId: any;
+    seller: any;
+    sellerId?: any;
     amount: number;
-    paymentMethod: string;
-    paymentDetails: string;
+    paymentMethod: "BKASH" | "NAGAD" | "ROCKET" | "BANK";
+    paymentDetails: {
+        accountName?: string;
+        accountNumber: string;
+        bankName?: string;
+        branchName?: string;
+        routingNumber?: string;
+    };
     status: "PENDING" | "APPROVED" | "REJECTED";
-    adminRemarks?: string;
-    resolvedAt?: string;
+    adminNote?: string;
+    transactionId?: string;
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface IWithdrawStats {
+    availableBalance: number;
+    pendingCashout: number;
+    completedPayouts: number;
 }
 
 type ApiResponse<T> = {
@@ -36,30 +49,49 @@ const withdrawApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
         createWithdrawRequest: builder.mutation<
             ApiResponse<IWithdrawRequest>,
-            { amount: number; paymentMethod: string; paymentDetails: string }
+            {
+                amount: number;
+                paymentMethod: string;
+                paymentDetails: {
+                    accountNumber: string;
+                    accountName?: string;
+                    bankName?: string;
+                    branchName?: string;
+                    routingNumber?: string;
+                };
+            }
         >({
             query: (body) => ({
-                url: "/withdraw",
+                url: "/withdraws",
                 method: "POST",
                 body,
             }),
             invalidatesTags: [
                 { type: "Withdraw", id: "MY_LIST" },
                 { type: "Withdraw", id: "LIST" },
+                { type: "Withdraw", id: "STATS" },
             ],
         }),
 
         getMyWithdrawRequests: builder.query<ApiResponse<IWithdrawRequest[]>, void>({
             query: () => ({
-                url: "/withdraw/my",
+                url: "/withdraws/my",
                 method: "GET",
             }),
             providesTags: [{ type: "Withdraw", id: "MY_LIST" }],
         }),
 
+        getWithdrawStats: builder.query<ApiResponse<IWithdrawStats>, void>({
+            query: () => ({
+                url: "/withdraws/stats",
+                method: "GET",
+            }),
+            providesTags: [{ type: "Withdraw", id: "STATS" }],
+        }),
+
         getAllWithdrawRequests: builder.query<ApiListResponse<IWithdrawRequest[]>, Record<string, any> | void>({
             query: (params) => ({
-                url: "/withdraw",
+                url: "/withdraws",
                 method: "GET",
                 params: params || undefined,
             }),
@@ -71,7 +103,7 @@ const withdrawApi = baseApi.injectEndpoints({
             { id: string; status: "APPROVED" | "REJECTED"; adminRemarks?: string }
         >({
             query: ({ id, status, adminRemarks }) => ({
-                url: `/withdraw/${id}/resolve`,
+                url: `/withdraws/${id}/resolve`,
                 method: "PATCH",
                 body: { status, adminRemarks },
             }),
@@ -79,6 +111,7 @@ const withdrawApi = baseApi.injectEndpoints({
                 { type: "Withdraw", id },
                 { type: "Withdraw", id: "MY_LIST" },
                 { type: "Withdraw", id: "LIST" },
+                { type: "Withdraw", id: "STATS" },
             ],
         }),
     }),
@@ -87,6 +120,7 @@ const withdrawApi = baseApi.injectEndpoints({
 export const {
     useCreateWithdrawRequestMutation,
     useGetMyWithdrawRequestsQuery,
+    useGetWithdrawStatsQuery,
     useGetAllWithdrawRequestsQuery,
     useResolveWithdrawRequestMutation,
 } = withdrawApi;

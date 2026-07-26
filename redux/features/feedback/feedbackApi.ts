@@ -36,7 +36,7 @@ const feedbackApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
         createFeedback: builder.mutation<ApiResponse<IFeedback>, Partial<IFeedback>>({
             query: (body) => ({
-                url: "/feedback",
+                url: "/feedbacks",
                 method: "POST",
                 body,
             }),
@@ -45,7 +45,7 @@ const feedbackApi = baseApi.injectEndpoints({
 
         getAllFeedbacks: builder.query<ApiListResponse<IFeedback[]>, Record<string, any> | void>({
             query: (params) => ({
-                url: "/feedback",
+                url: "/feedbacks",
                 method: "GET",
                 params: params || undefined,
             }),
@@ -57,7 +57,7 @@ const feedbackApi = baseApi.injectEndpoints({
             { id: string; status: string; adminNote?: string }
         >({
             query: ({ id, status, adminNote }) => ({
-                url: `/feedback/${id}/status`,
+                url: `/feedbacks/${id}/status`,
                 method: "PATCH",
                 body: { status, adminNote },
             }),
@@ -69,7 +69,7 @@ const feedbackApi = baseApi.injectEndpoints({
 
         deleteFeedback: builder.mutation<ApiResponse<null>, string>({
             query: (id) => ({
-                url: `/feedback/${id}`,
+                url: `/feedbacks/${id}`,
                 method: "DELETE",
             }),
             invalidatesTags: (result, error, id) => [

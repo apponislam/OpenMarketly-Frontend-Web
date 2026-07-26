@@ -34,7 +34,7 @@ const activityApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
         getMyActivityLogs: builder.query<ApiResponse<IActivityLog[]>, void>({
             query: () => ({
-                url: "/activity/my",
+                url: "/activities/my",
                 method: "GET",
             }),
             providesTags: [{ type: "Activity", id: "MY_LIST" }],
@@ -42,7 +42,7 @@ const activityApi = baseApi.injectEndpoints({
 
         getAllActivityLogs: builder.query<ApiListResponse<IActivityLog[]>, Record<string, any> | void>({
             query: (params) => ({
-                url: "/activity",
+                url: "/activities",
                 method: "GET",
                 params: params || undefined,
             }),
