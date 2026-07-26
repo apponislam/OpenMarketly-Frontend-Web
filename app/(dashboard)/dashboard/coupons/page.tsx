@@ -8,6 +8,7 @@ import {
     useDeleteCouponMutation,
 } from "@/redux/features/coupon/couponApi";
 import { Plus, Tag, Trash2, Edit } from "lucide-react";
+import { DashboardPageHeader, DashboardCard } from "@/components/dashboard";
 
 export default function CouponsPage() {
     const { data: couponsData, refetch } = useGetAllCouponsQuery();
@@ -64,17 +65,10 @@ export default function CouponsPage() {
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto font-sans">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">Coupon Campaign Codes</h1>
-                <p className="mt-1.5 text-sm text-gray-500">Manage discounts, percentage off and flat rates coupon codes.</p>
-            </div>
+            <DashboardPageHeader title="Coupon Campaign Codes" subtitle="Manage discounts, percentage off and flat rates coupon codes." />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Create Coupon Form */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 h-fit">
-                    <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <Plus className="h-5 w-5 text-[#2c1654]" /> Create New Coupon
-                    </h2>
+                <DashboardCard title="Create New Coupon" headerRight={<Plus className="h-5 w-5 text-[#2c1654]" />} className="h-fit">
 
                     <form onSubmit={handleCreate} className="space-y-4">
                         <div>
@@ -152,11 +146,9 @@ export default function CouponsPage() {
                             <Tag className="h-4 w-4" /> Create Coupon
                         </button>
                     </form>
-                </div>
+                </DashboardCard>
 
-                {/* Coupons List */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm lg:col-span-2 space-y-4">
-                    <h2 className="text-lg font-bold text-gray-900">Active Coupons</h2>
+                <DashboardCard title="Active Coupons" className="lg:col-span-2">
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-gray-500">
@@ -202,7 +194,7 @@ export default function CouponsPage() {
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </DashboardCard>
             </div>
         </div>
     );
