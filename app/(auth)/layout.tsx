@@ -7,7 +7,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <ReduxProviders>
             <div className="min-h-screen flex bg-[#090514] text-white overflow-hidden font-sans">
                 {/* Left Side: Cover Image (Hidden on Mobile) */}
-                <div className="hidden md:flex md:w-1/2 relative flex-col justify-between p-12 bg-cover bg-center" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80")' }}>
+                <div className="hidden md:flex md:w-1/2 relative flex-col justify-between p-12 bg-cover bg-center" style={{ backgroundImage: 'url("/auth_cover.png")' }}>
                     <div className="absolute inset-0 bg-gradient-to-b from-[#090514]/90 via-[#150e26]/70 to-[#090514]/90" />
                     
                     {/* Top Branding */}
@@ -46,7 +46,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                                 OpenMarketly
                             </span>
                         </div>
-                        <div className="bg-[#150e26]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sm:p-8 shadow-[0_8px_32px_0_rgba(12,6,28,0.37)]">
+                        <div className="w-full">
                             {children}
                         </div>
                     </div>

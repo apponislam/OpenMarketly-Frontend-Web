@@ -72,7 +72,7 @@ export default function LoginPage() {
                         type="email"
                         {...register("email")}
                         placeholder="you@example.com"
-                        className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
+                        className="w-full bg-[#1e1633] border border-transparent rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
                     />
                     {errors.email && (
                         <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>
@@ -96,7 +96,7 @@ export default function LoginPage() {
                         type="password"
                         {...register("password")}
                         placeholder="••••••••"
-                        className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
+                        className="w-full bg-[#1e1633] border border-transparent rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
                     />
                     {errors.password && (
                         <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>
