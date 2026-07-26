@@ -3,11 +3,9 @@
 import React from "react";
 import { useAppSelector } from "@/redux/hooks";
 import { currentUser } from "@/redux/features/auth/authSlice";
-import {
-    useGetAllActivityLogsQuery,
-    useGetMyActivityLogsQuery,
-} from "@/redux/features/activity/activityApi";
+import { useGetAllActivityLogsQuery, useGetMyActivityLogsQuery } from "@/redux/features/activity/activityApi";
 import { History, Clock, Globe, Shield } from "lucide-react";
+import { DashboardPageHeader, DashboardCard } from "@/components/dashboard";
 
 export default function ActivityPage() {
     const user = useAppSelector(currentUser);
@@ -20,18 +18,12 @@ export default function ActivityPage() {
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto font-sans">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">Activity Logs</h1>
-                <p className="mt-1.5 text-sm text-gray-500">
-                    {isAdmin ? "Audit trail of all administrative and vendor actions." : "Security log of your account logins and settings changes."}
-                </p>
-            </div>
+            <DashboardPageHeader
+                title="Activity Logs"
+                subtitle={isAdmin ? "Audit trail of all administrative and vendor actions." : "Security log of your account logins and settings changes."}
+            />
 
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <History className="h-5 w-5 text-[#2c1654]" /> Log Trail
-                </h2>
-
+            <DashboardCard title="Log Trail" headerRight={<History className="h-5 w-5 text-[#2c1654]" />}>
                 <div className="divide-y divide-gray-100">
                     {logs.map((log) => (
                         <div key={log._id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -61,11 +53,9 @@ export default function ActivityPage() {
                             </div>
                         </div>
                     ))}
-                    {logs.length === 0 && (
-                        <p className="text-sm text-gray-400 py-8 text-center">No activity records found.</p>
-                    )}
+                    {logs.length === 0 && <p className="text-sm text-gray-400 py-8 text-center">No activity records found.</p>}
                 </div>
-            </div>
+            </DashboardCard>
         </div>
     );
 }

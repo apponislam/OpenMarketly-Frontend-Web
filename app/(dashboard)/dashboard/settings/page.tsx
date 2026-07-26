@@ -5,6 +5,7 @@ import { useAppSelector } from "@/redux/hooks";
 import { currentUser } from "@/redux/features/auth/authSlice";
 import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/redux/features/settings/settingsApi";
 import { Settings, Save, AlertCircle } from "lucide-react";
+import { DashboardPageHeader, DashboardCard } from "@/components/dashboard";
 
 export default function SettingsPage() {
     const user = useAppSelector(currentUser);
@@ -31,51 +32,35 @@ export default function SettingsPage() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setMessage("");
-
         try {
-            await updateSettings({
-                siteName,
-                currency,
-                commissionPercentage: Number(commission),
-                shippingFee: Number(shippingFee),
-            }).unwrap();
+            await updateSettings({ siteName, currency, commissionPercentage: Number(commission), shippingFee: Number(shippingFee) }).unwrap();
             setMessage("Settings saved successfully!");
-        } catch (err: any) {
-            setMessage("Error saving settings: " + (err?.data?.message || err.message));
-        }
+        } catch (err: any) { setMessage("Error saving settings: " + (err?.data?.message || err.message)); }
     };
 
     return (
         <div className="space-y-8 max-w-4xl mx-auto font-sans">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">Configuration Settings</h1>
-                <p className="mt-1.5 text-sm text-gray-500">{isAdmin ? "Manage global marketplace policies, branding and currency settings." : "View your account credentials and personal configs."}</p>
-            </div>
+            <DashboardPageHeader
+                title="Configuration Settings"
+                subtitle={isAdmin ? "Manage global marketplace policies, branding and currency settings." : "View your account credentials and personal configs."}
+            />
 
             {isAdmin ? (
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <DashboardCard title="Branding & Marketplace Configuration" headerRight={<Settings className="h-5 w-5 text-[#2c1654]" />}>
                     <form onSubmit={handleSave} className="space-y-6">
-                        <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-                            <Settings className="h-5 w-5 text-[#2c1654]" />
-                            <h2 className="text-lg font-bold text-gray-900">Branding & Marketplace Configuration</h2>
-                        </div>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Site Name</label>
                                 <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]" />
                             </div>
-
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Currency Code</label>
                                 <input type="text" value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]" />
                             </div>
-
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Commission Percentage (%)</label>
                                 <input type="number" value={commission} onChange={(e) => setCommission(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]" />
                             </div>
-
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Default Shipping Fee (BDT)</label>
                                 <input type="number" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]" />
@@ -92,14 +77,9 @@ export default function SettingsPage() {
                             <Save className="h-4 w-4" /> {isUpdating ? "Saving..." : "Save Settings"}
                         </button>
                     </form>
-                </div>
+                </DashboardCard>
             ) : (
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-                    <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-                        <Settings className="h-5 w-5 text-[#2c1654]" />
-                        <h2 className="text-lg font-bold text-gray-900">Your Account Profile</h2>
-                    </div>
-
+                <DashboardCard title="Your Account Profile" headerRight={<Settings className="h-5 w-5 text-[#2c1654]" />}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <span className="block text-xs font-semibold text-gray-500">Name</span>
@@ -118,7 +98,7 @@ export default function SettingsPage() {
                             <p className="text-sm font-bold text-gray-800 mt-1">৳ {user?.balance || 0}</p>
                         </div>
                     </div>
-                </div>
+                </DashboardCard>
             )}
         </div>
     );
