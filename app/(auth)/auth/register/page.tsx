@@ -29,9 +29,10 @@ export default function RegisterPage() {
     const [step, setStep] = useState(1);
     const [errorMessage, setErrorMessage] = useState("");
 
-    // Custom state for file upload
+    // Custom state for file upload & image URL input
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [imageUrlInput, setImageUrlInput] = useState<string>("");
     const [isUploading, setIsUploading] = useState(false);
 
     const {
@@ -60,7 +61,11 @@ export default function RegisterPage() {
         const file = e.target.files?.[0];
         if (file) {
             setImageFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
@@ -79,17 +84,13 @@ export default function RegisterPage() {
         setErrorMessage("");
         setIsUploading(true);
 
-        let uploadedImageUrl = "";
+        let finalProfileImage = imageUrlInput || previewUrl || "";
 
-        // 1. Upload to Cloudinary if image is selected
-        if (imageFile) {
+        // Try Cloudinary upload if env vars are set, but fallback gracefully to Base64 data URL or imageUrlInput
+        if (imageFile && process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME) {
             try {
                 const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
                 const presetName = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME;
-
-                if (!cloudName || !presetName) {
-                    throw new Error("Cloudinary environment variables are missing");
-                }
 
                 const formData = new FormData();
                 formData.append("file", imageFile);
@@ -102,20 +103,16 @@ export default function RegisterPage() {
 
                 const uploadData = await response.json();
                 if (uploadData.secure_url) {
-                    uploadedImageUrl = uploadData.secure_url;
-                } else {
-                    throw new Error(uploadData.error?.message || "Failed to upload image to Cloudinary");
+                    finalProfileImage = uploadData.secure_url;
                 }
-            } catch (err: any) {
-                setErrorMessage(err.message || "Failed to upload profile image");
-                setIsUploading(false);
-                return;
+            } catch (err) {
+                console.warn("Cloudinary upload skipped or failed, using local image data", err);
             }
         }
 
         setIsUploading(false);
 
-        // 2. Perform Backend Registration
+        // Perform Backend Registration
         try {
             const res = await register({
                 name: data.name,
@@ -124,7 +121,7 @@ export default function RegisterPage() {
                 role: data.role,
                 phone: data.phone || undefined,
                 gender: data.gender,
-                profileImage: uploadedImageUrl || undefined,
+                profileImage: finalProfileImage || undefined,
                 referralCode: data.referralCode || undefined,
             }).unwrap();
 
@@ -246,14 +243,14 @@ export default function RegisterPage() {
                 </form>
             ) : (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="flex flex-col items-center mb-4">
-                        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    <div className="flex flex-col items-center mb-4 space-y-3">
+                        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
                             Profile Picture
                         </label>
                         <div className="relative w-24 h-24 rounded-full bg-[#1e1633] border-2 border-white/10 overflow-hidden flex items-center justify-center group cursor-pointer">
-                            {previewUrl ? (
+                            {previewUrl || imageUrlInput ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                <img src={previewUrl || imageUrlInput} alt="Preview" className="w-full h-full object-cover" />
                             ) : (
                                 <span className="text-xs text-gray-400 text-center px-2">Select Image</span>
                             )}
@@ -262,6 +259,16 @@ export default function RegisterPage() {
                                 accept="image/*"
                                 onChange={handleFileChange}
                                 className="absolute inset-0 opacity-0 cursor-pointer"
+                            />
+                        </div>
+                        <div className="w-full">
+                            <span className="block text-[10px] text-center text-gray-500 uppercase tracking-wider mb-1">or paste Image URL</span>
+                            <input
+                                type="text"
+                                placeholder="https://example.com/avatar.jpg"
+                                value={imageUrlInput}
+                                onChange={(e) => setImageUrlInput(e.target.value)}
+                                className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#c8960c]"
                             />
                         </div>
                     </div>
