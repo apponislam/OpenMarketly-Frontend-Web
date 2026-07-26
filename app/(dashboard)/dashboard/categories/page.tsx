@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import {
+    useGetParentCategoriesQuery,
+    useGetSubcategoriesQuery,
     useGetAllCategoriesQuery,
     useCreateCategoryMutation,
     useUpdateCategoryMutation,
@@ -25,16 +27,20 @@ import {
     CornerDownRight,
     Tag,
     X,
+    Loader2,
 } from "lucide-react";
 
 export default function CategoriesPage() {
-    const { data: categoriesData, refetch } = useGetAllCategoriesQuery();
+    // 1. Fetch root level parent categories directly via GET /api/v1/categories/parents
+    const { data: parentCategoriesData, refetch: refetchParents } = useGetParentCategoriesQuery();
+    // 2. Fetch all categories for search & form parent select dropdown
+    const { data: allCategoriesData, refetch: refetchAll } = useGetAllCategoriesQuery();
+
     const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
     const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
     const [deleteCategory] = useDeleteCategoryMutation();
 
     const [search, setSearch] = useState("");
-    const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
     const [showModal, setShowModal] = useState(false);
     const [editingCategory, setEditingCategory] = useState<ICategory | null>(null);
 
@@ -46,18 +52,8 @@ export default function CategoriesPage() {
     const [imagePreview, setImagePreview] = useState("");
     const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-    const categories = categoriesData?.data || [];
-
-    // Root categories (level 0 - where parentCategory is null or undefined)
-    const rootCategories = categories.filter((c) => getParentId(c) === null);
-
-    // Get direct children of a given parentId
-    const getChildrenOf = (parentId: string) =>
-        categories.filter((c) => getParentId(c) === parentId);
-
-    const toggleExpand = (id: string) => {
-        setExpandedIds((prev) => ({ ...prev, [id]: !prev[id] }));
-    };
+    const rootCategories = parentCategoriesData?.data || [];
+    const allCategories = allCategoriesData?.data || [];
 
     const handleOpenCreateModal = (presetParentId?: string) => {
         setEditingCategory(null);
@@ -127,7 +123,8 @@ export default function CategoriesPage() {
 
             setTimeout(() => {
                 setShowModal(false);
-                refetch();
+                refetchParents();
+                refetchAll();
             }, 1000);
         } catch (err: any) {
             setStatusMsg({ type: "error", text: err?.data?.message || err?.message || "Failed to save category." });
@@ -138,7 +135,8 @@ export default function CategoriesPage() {
         if (confirm(`Are you sure you want to delete "${name}" and all its nested subcategories?`)) {
             try {
                 await deleteCategory(id).unwrap();
-                refetch();
+                refetchParents();
+                refetchAll();
             } catch (err: any) {
                 alert(err?.data?.message || "Failed to delete category.");
             }
@@ -147,7 +145,7 @@ export default function CategoriesPage() {
 
     // Recursive helper to render options for parent category dropdown in modal
     const renderCategorySelectOptions = (parentId: string | null = null, depth: number = 0): React.ReactNode[] => {
-        const children = categories.filter((c) => getParentId(c) === parentId);
+        const children = allCategories.filter((c) => getParentId(c) === parentId);
         let options: React.ReactNode[] = [];
 
         children.forEach((cat) => {
@@ -167,24 +165,17 @@ export default function CategoriesPage() {
         return options;
     };
 
-    // Filter categories for search
+    // Filter root categories for search
     const filteredRoots = rootCategories.filter((root) => {
         if (!search.trim()) return true;
-
-        const isMatchRecursive = (cat: ICategory): boolean => {
-            if (cat.name.toLowerCase().includes(search.toLowerCase())) return true;
-            const children = getChildrenOf(cat._id);
-            return children.some(isMatchRecursive);
-        };
-
-        return isMatchRecursive(root);
+        return root.name.toLowerCase().includes(search.toLowerCase());
     });
 
     return (
         <div className="space-y-8 w-full font-sans pb-12">
             <DashboardPageHeader
-                title="Multi-Level Nested Categories"
-                subtitle="Manage infinite-level parent & subcategory hierarchies across your marketplace."
+                title="Nested Categories Manager"
+                subtitle="Root level categories fetched first via GET /categories/parents; hit parent to load subcategories via GET /categories/subcategories/:parentId."
                 action={
                     <button
                         onClick={() => handleOpenCreateModal()}
@@ -197,27 +188,24 @@ export default function CategoriesPage() {
 
             {/* Search Bar & Summary Pills */}
             <div className="bg-white p-5 rounded-3xl border border-purple-100/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                <SearchInput value={search} onChange={setSearch} placeholder="Search any category level..." className="w-full sm:w-80" />
+                <SearchInput value={search} onChange={setSearch} placeholder="Search root categories..." className="w-full sm:w-80" />
                 <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
                     <span className="bg-purple-50 text-[#2c1654] px-3.5 py-1.5 rounded-xl border border-purple-100">
                         📁 {rootCategories.length} Main Root Categories
                     </span>
                     <span className="bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-xl border border-amber-200">
-                        📂 {categories.length - rootCategories.length} Multi-Level Subcategories
+                        📂 {allCategories.length - rootCategories.length} Total Subcategories
                     </span>
                 </div>
             </div>
 
-            {/* Recursive Multi-Level Category Tree List */}
+            {/* Root Category Tree List */}
             <div className="space-y-4">
                 {filteredRoots.map((root) => (
                     <CategoryTreeNode
                         key={root._id}
                         category={root}
-                        allCategories={categories}
                         depth={0}
-                        expandedIds={expandedIds}
-                        onToggleExpand={toggleExpand}
                         onAddSubcategory={handleOpenCreateModal}
                         onEdit={handleEditClick}
                         onDelete={handleDelete}
@@ -227,7 +215,7 @@ export default function CategoriesPage() {
                 {filteredRoots.length === 0 && (
                     <div className="bg-white rounded-3xl p-12 text-center border border-purple-100/80 shadow-sm space-y-3">
                         <FolderTree className="w-10 h-10 text-gray-300 mx-auto" />
-                        <h4 className="font-bold text-gray-800 text-base">No Categories Found</h4>
+                        <h4 className="font-bold text-gray-800 text-base">No Root Categories Found</h4>
                         <p className="text-xs text-gray-500 max-w-sm mx-auto">
                             Get started by clicking &quot;Create Root Category&quot; above to add your first top-level product category.
                         </p>
@@ -295,7 +283,7 @@ export default function CategoriesPage() {
                                     {renderCategorySelectOptions()}
                                 </select>
                                 <p className="text-[10px] text-gray-400 mt-1">
-                                    Select any category level to nest under it infinitely.
+                                    Select any category level to nest under it.
                                 </p>
                             </div>
 
@@ -357,13 +345,10 @@ export default function CategoriesPage() {
     );
 }
 
-// === Recursive Category Tree Node Component ===
+// === Node Component that fetches subcategories on hit via GET /categories/subcategories/:parentId ===
 interface CategoryTreeNodeProps {
     category: ICategory;
-    allCategories: ICategory[];
     depth: number;
-    expandedIds: Record<string, boolean>;
-    onToggleExpand: (id: string) => void;
     onAddSubcategory: (parentId: string) => void;
     onEdit: (cat: ICategory) => void;
     onDelete: (id: string, name: string) => void;
@@ -371,17 +356,19 @@ interface CategoryTreeNodeProps {
 
 function CategoryTreeNode({
     category,
-    allCategories,
     depth,
-    expandedIds,
-    onToggleExpand,
     onAddSubcategory,
     onEdit,
     onDelete,
 }: CategoryTreeNodeProps) {
-    const children = allCategories.filter((c) => getParentId(c) === category._id);
-    const hasChildren = children.length > 0;
-    const isExpanded = expandedIds[category._id] ?? false;
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    // Fetch subcategories directly from backend endpoint /api/v1/categories/subcategories/:parentId when expanded!
+    const { data: subcategoryResponse, isLoading: isLoadingSubs } = useGetSubcategoriesQuery(category._id, {
+        skip: !isExpanded,
+    });
+
+    const subcategories = subcategoryResponse?.data || [];
     const isRoot = depth === 0;
 
     return (
@@ -398,16 +385,19 @@ function CategoryTreeNode({
                 <div className="flex items-center gap-3">
                     {depth > 0 && <CornerDownRight className="w-4 h-4 text-purple-400 shrink-0" />}
 
-                    {hasChildren ? (
-                        <button
-                            onClick={() => onToggleExpand(category._id)}
-                            className="p-1.5 rounded-xl hover:bg-purple-100/60 text-[#2c1654] transition-colors cursor-pointer"
-                        >
-                            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                        </button>
-                    ) : (
-                        <div className="w-4 h-4" />
-                    )}
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="p-1.5 rounded-xl hover:bg-purple-100/60 text-[#2c1654] transition-colors cursor-pointer flex items-center justify-center"
+                        title={isExpanded ? "Collapse Subcategories" : "Hit to Load Subcategories"}
+                    >
+                        {isLoadingSubs ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                        ) : isExpanded ? (
+                            <ChevronDown className="w-4 h-4" />
+                        ) : (
+                            <ChevronRight className="w-4 h-4" />
+                        )}
+                    </button>
 
                     {category.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -437,7 +427,6 @@ function CategoryTreeNode({
                         </div>
                         <p className="text-xs text-gray-500 mt-0.5">
                             Slug: <span className="font-mono text-purple-900">{category.slug}</span>
-                            {hasChildren && ` • ${children.length} direct subcategories`}
                         </p>
                     </div>
                 </div>
@@ -469,22 +458,29 @@ function CategoryTreeNode({
                 </div>
             </div>
 
-            {/* Recursive Children Render */}
-            {hasChildren && isExpanded && (
+            {/* Render Subcategories when hit/expanded */}
+            {isExpanded && (
                 <div className="p-3 bg-[#f8f7fc] space-y-2 border-t border-purple-50">
-                    {children.map((child) => (
-                        <CategoryTreeNode
-                            key={child._id}
-                            category={child}
-                            allCategories={allCategories}
-                            depth={depth + 1}
-                            expandedIds={expandedIds}
-                            onToggleExpand={onToggleExpand}
-                            onAddSubcategory={onAddSubcategory}
-                            onEdit={onEdit}
-                            onDelete={onDelete}
-                        />
-                    ))}
+                    {isLoadingSubs ? (
+                        <div className="py-4 text-center text-xs font-semibold text-purple-700 flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-purple-600" /> Loading subcategories...
+                        </div>
+                    ) : subcategories.length > 0 ? (
+                        subcategories.map((child) => (
+                            <CategoryTreeNode
+                                key={child._id}
+                                category={child}
+                                depth={depth + 1}
+                                onAddSubcategory={onAddSubcategory}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                            />
+                        ))
+                    ) : (
+                        <div className="py-3 text-center text-xs text-gray-400">
+                            No subcategories found under &quot;{category.name}&quot;.
+                        </div>
+                    )}
                 </div>
             )}
         </div>
