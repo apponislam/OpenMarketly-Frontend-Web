@@ -9,7 +9,8 @@ import {
     useGetMeQuery,
 } from "@/redux/features/auth/authApi";
 import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/redux/features/settings/settingsApi";
-import { Settings, Save, Lock, User, CheckCircle2, AlertCircle, Camera } from "lucide-react";
+import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
+import { Settings, Save, Lock, User, CheckCircle2, AlertCircle, Camera, Loader2 } from "lucide-react";
 import { DashboardPageHeader, DashboardCard } from "@/components/dashboard";
 
 export default function SettingsPage() {
@@ -65,16 +66,22 @@ export default function SettingsPage() {
         }
     }, [siteSettingsData]);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64Str = reader.result as string;
-                setProfilePreview(base64Str);
-                setProfileImage(base64Str);
-            };
-            reader.readAsDataURL(file);
+            setIsUploadingImage(true);
+            setProfileMsg(null);
+            try {
+                const cloudinaryUrl = await uploadToCloudinary(file);
+                setProfilePreview(cloudinaryUrl);
+                setProfileImage(cloudinaryUrl);
+            } catch (err: any) {
+                setProfileMsg({ type: "error", text: "Cloudinary upload failed: " + (err.message || "Unknown error") });
+            } finally {
+                setIsUploadingImage(false);
+            }
         }
     };
 

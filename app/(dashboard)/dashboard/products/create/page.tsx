@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateProductMutation } from "@/redux/features/product/productApi";
 import { useGetParentCategoriesQuery, useGetSubcategoriesQuery } from "@/redux/features/category/categoryApi";
+import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
 import { DashboardPageHeader, DashboardCard } from "@/components/dashboard";
 import {
     ArrowLeft,
@@ -19,6 +20,7 @@ import {
     DollarSign,
     Shield,
     Image as ImageIcon,
+    Loader2,
 } from "lucide-react";
 
 export default function CreateProductPage() {
@@ -81,17 +83,40 @@ export default function CreateProductPage() {
     // Messages
     const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-    // Image Upload Handlers
-    const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+    const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+
+    // Image Upload Handlers via Cloudinary
+    const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const result = reader.result as string;
-                setThumbnailPreview(result);
-                setThumbnail(result);
-            };
-            reader.readAsDataURL(file);
+            setIsUploadingThumbnail(true);
+            setStatusMsg(null);
+            try {
+                const cloudinaryUrl = await uploadToCloudinary(file);
+                setThumbnailPreview(cloudinaryUrl);
+                setThumbnail(cloudinaryUrl);
+            } catch (err: any) {
+                setStatusMsg({ type: "error", text: "Thumbnail Cloudinary upload failed: " + (err.message || "Unknown error") });
+            } finally {
+                setIsUploadingThumbnail(false);
+            }
+        }
+    };
+
+    const handleGalleryFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setIsUploadingGallery(true);
+            setStatusMsg(null);
+            try {
+                const cloudinaryUrl = await uploadToCloudinary(file);
+                setGalleryImages((prev) => [...prev, cloudinaryUrl]);
+            } catch (err: any) {
+                setStatusMsg({ type: "error", text: "Gallery image Cloudinary upload failed: " + (err.message || "Unknown error") });
+            } finally {
+                setIsUploadingGallery(false);
+            }
         }
     };
 
@@ -441,47 +466,70 @@ export default function CreateProductPage() {
                         {/* Main Thumbnail Upload */}
                         <div className="space-y-2">
                             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                Main Thumbnail Photo
+                                Main Thumbnail Photo (Cloudinary)
                             </label>
                             <div className="border-2 border-dashed border-gray-200 rounded-2xl p-4 text-center hover:border-[#2c1654] transition-colors relative flex flex-col items-center justify-center min-h-[160px] bg-gray-50/50">
-                                {thumbnailPreview ? (
+                                {isUploadingThumbnail ? (
+                                    <div className="space-y-2 flex flex-col items-center">
+                                        <Loader2 className="w-8 h-8 text-[#2c1654] animate-spin" />
+                                        <p className="text-xs font-bold text-[#2c1654]">Uploading to Cloudinary...</p>
+                                    </div>
+                                ) : thumbnailPreview ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={thumbnailPreview} alt="Thumbnail preview" className="max-h-36 rounded-xl object-contain" />
                                 ) : (
                                     <div className="space-y-2">
                                         <Upload className="w-8 h-8 text-gray-400 mx-auto" />
-                                        <p className="text-xs text-gray-500 font-medium">Click to select image file</p>
+                                        <p className="text-xs text-gray-500 font-medium">Click to upload photo to Cloudinary</p>
                                     </div>
                                 )}
                                 <input
                                     type="file"
                                     accept="image/*"
                                     onChange={handleThumbnailChange}
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    disabled={isUploadingThumbnail}
+                                    className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
                                 />
                             </div>
                         </div>
 
-                        {/* Gallery Images URLs */}
+                        {/* Gallery Images Upload & URLs */}
                         <div className="md:col-span-2 space-y-3">
                             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                Gallery Images (Image URLs)
+                                Gallery Images (Upload File or Enter URL)
                             </label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="https://example.com/photo-2.jpg"
-                                    value={newGalleryInput}
-                                    onChange={(e) => setNewGalleryInput(e.target.value)}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleAddGalleryImage}
-                                    className="px-4 py-2.5 bg-[#2c1654] text-white font-bold text-xs rounded-xl hover:opacity-90 transition-opacity shrink-0 cursor-pointer"
-                                >
-                                    Add Image
-                                </button>
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
+                                <label className="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-[#2c1654] font-bold text-xs rounded-xl cursor-pointer transition-colors shrink-0 flex items-center gap-2 border border-purple-100">
+                                    {isUploadingGallery ? (
+                                        <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                                    ) : (
+                                        <Upload className="w-4 h-4 text-amber-500" />
+                                    )}
+                                    {isUploadingGallery ? "Uploading..." : "Upload File to Cloudinary"}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleGalleryFileUpload}
+                                        disabled={isUploadingGallery}
+                                        className="hidden"
+                                    />
+                                </label>
+                                <div className="flex items-center gap-2 w-full">
+                                    <input
+                                        type="text"
+                                        placeholder="Or paste image URL (e.g. https://...)"
+                                        value={newGalleryInput}
+                                        onChange={(e) => setNewGalleryInput(e.target.value)}
+                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleAddGalleryImage}
+                                        className="px-4 py-2.5 bg-[#2c1654] text-white font-bold text-xs rounded-xl hover:opacity-90 transition-opacity shrink-0 cursor-pointer"
+                                    >
+                                        Add URL
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Gallery Preview List */}

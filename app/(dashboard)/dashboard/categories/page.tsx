@@ -9,6 +9,7 @@ import {
     useDeleteCategoryMutation,
     ICategory,
 } from "@/redux/features/category/categoryApi";
+import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
 import { DashboardPageHeader, SearchInput } from "@/components/dashboard";
 import {
     FolderTree,
@@ -29,7 +30,6 @@ import {
 } from "lucide-react";
 
 export default function CategoriesPage() {
-    // 1. Fetch root level parent categories using useGetParentCategoriesQuery -> GET /categories/parents
     const { data: parentCategoriesData, refetch: refetchParents, isLoading: isLoadingParents } = useGetParentCategoriesQuery();
 
     const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
@@ -46,6 +46,7 @@ export default function CategoriesPage() {
     const [description, setDescription] = useState("");
     const [image, setImage] = useState("");
     const [imagePreview, setImagePreview] = useState("");
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     const rootCategories = parentCategoriesData?.data || [];
@@ -73,16 +74,20 @@ export default function CategoriesPage() {
         setShowModal(true);
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const res = reader.result as string;
-                setImagePreview(res);
-                setImage(res);
-            };
-            reader.readAsDataURL(file);
+            setIsUploadingImage(true);
+            setStatusMsg(null);
+            try {
+                const cloudinaryUrl = await uploadToCloudinary(file);
+                setImage(cloudinaryUrl);
+                setImagePreview(cloudinaryUrl);
+            } catch (err: any) {
+                setStatusMsg({ type: "error", text: "Cloudinary upload failed: " + (err.message || "Unknown error") });
+            } finally {
+                setIsUploadingImage(false);
+            }
         }
     };
 
@@ -146,7 +151,7 @@ export default function CategoriesPage() {
         <div className="space-y-8 w-full font-sans pb-12">
             <DashboardPageHeader
                 title="Categories Management"
-                subtitle="Root categories loaded via GET /categories/parents; subcategories loaded on hit via GET /categories/subcategories/:parentId."
+                subtitle="Manage product category hierarchy. Images are uploaded directly to Cloudinary."
                 action={
                     <button
                         onClick={() => handleOpenCreateModal()}
@@ -277,20 +282,22 @@ export default function CategoriesPage() {
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                                    Category Photo
+                                    Category Photo (Cloudinary Upload)
                                 </label>
                                 <div className="flex items-center gap-3">
                                     <div className="w-14 h-14 rounded-2xl border border-purple-100 overflow-hidden bg-purple-50 flex items-center justify-center shrink-0">
-                                        {imagePreview ? (
+                                        {isUploadingImage ? (
+                                            <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+                                        ) : imagePreview ? (
                                             // eslint-disable-next-line @next/next/no-img-element
                                             <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                                         ) : (
                                             <ImageIcon className="w-6 h-6 text-purple-400" />
                                         )}
                                     </div>
-                                    <label className="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-[#2c1654] font-bold text-xs rounded-xl cursor-pointer transition-colors">
-                                        Choose File
-                                        <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                                    <label className="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-[#2c1654] font-bold text-xs rounded-xl cursor-pointer transition-colors flex items-center gap-1.5">
+                                        {isUploadingImage ? "Uploading to Cloudinary..." : "Choose & Upload"}
+                                        <input type="file" accept="image/*" onChange={handleImageChange} disabled={isUploadingImage} className="hidden" />
                                     </label>
                                 </div>
                             </div>
@@ -305,7 +312,7 @@ export default function CategoriesPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={isCreating || isUpdating}
+                                    disabled={isCreating || isUpdating || isUploadingImage}
                                     className="px-5 py-2.5 bg-[#2c1654] hover:bg-[#3d2073] text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
                                 >
                                     <Save className="w-4 h-4 text-amber-400" />
@@ -320,7 +327,6 @@ export default function CategoriesPage() {
     );
 }
 
-// 2. Fetch subcategories directly using useGetSubcategoriesQuery -> GET /categories/subcategories/:parentId on hit!
 interface CategoryTreeNodeProps {
     category: ICategory;
     depth: number;
@@ -338,7 +344,6 @@ function CategoryTreeNode({
 }: CategoryTreeNodeProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Call GET /categories/subcategories/:parentId when hit/expanded
     const { data: subcategoryResponse, isLoading: isLoadingSubs } = useGetSubcategoriesQuery(category._id, {
         skip: !isExpanded,
     });
@@ -435,7 +440,7 @@ function CategoryTreeNode({
                 <div className="p-3 bg-[#f8f7fc] space-y-2 border-t border-purple-50">
                     {isLoadingSubs ? (
                         <div className="py-4 text-center text-xs font-semibold text-purple-700 flex items-center justify-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-purple-600" /> Loading subcategories from GET /categories/subcategories/{category._id}...
+                            <Loader2 className="w-4 h-4 animate-spin text-purple-600" /> Loading subcategories...
                         </div>
                     ) : subcategories.length > 0 ? (
                         subcategories.map((child) => (
