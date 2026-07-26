@@ -57,7 +57,6 @@ export default function CreateProductPage() {
     const [thumbnail, setThumbnail] = useState("");
     const [thumbnailPreview, setThumbnailPreview] = useState("");
     const [galleryImages, setGalleryImages] = useState<string[]>([]);
-    const [newGalleryInput, setNewGalleryInput] = useState("");
 
     // Variants (Colors & Sizes)
     const [colorsInput, setColorsInput] = useState("");
@@ -117,13 +116,6 @@ export default function CreateProductPage() {
             } finally {
                 setIsUploadingGallery(false);
             }
-        }
-    };
-
-    const handleAddGalleryImage = () => {
-        if (newGalleryInput.trim()) {
-            setGalleryImages([...galleryImages, newGalleryInput.trim()]);
-            setNewGalleryInput("");
         }
     };
 
@@ -493,19 +485,19 @@ export default function CreateProductPage() {
                             </div>
                         </div>
 
-                        {/* Gallery Images Upload & URLs */}
+                        {/* Gallery Images Upload */}
                         <div className="md:col-span-2 space-y-3">
                             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                Gallery Images (Upload File or Enter URL)
+                                Gallery Photos (Upload File)
                             </label>
-                            <div className="flex flex-col sm:flex-row items-center gap-3">
-                                <label className="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-[#2c1654] font-bold text-xs rounded-xl cursor-pointer transition-colors shrink-0 flex items-center gap-2 border border-purple-100">
+                            <div>
+                                <label className="px-5 py-3 bg-[#2c1654] hover:bg-[#3d2073] text-white font-bold text-xs rounded-xl cursor-pointer transition-colors inline-flex items-center gap-2 shadow-md">
                                     {isUploadingGallery ? (
-                                        <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                                        <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
                                     ) : (
-                                        <Upload className="w-4 h-4 text-amber-500" />
+                                        <Upload className="w-4 h-4 text-amber-400" />
                                     )}
-                                    {isUploadingGallery ? "Uploading..." : "Upload File to Cloudinary"}
+                                    {isUploadingGallery ? "Uploading Photo to Cloudinary..." : "+ Upload Gallery Photo"}
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -514,22 +506,6 @@ export default function CreateProductPage() {
                                         className="hidden"
                                     />
                                 </label>
-                                <div className="flex items-center gap-2 w-full">
-                                    <input
-                                        type="text"
-                                        placeholder="Or paste image URL (e.g. https://...)"
-                                        value={newGalleryInput}
-                                        onChange={(e) => setNewGalleryInput(e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleAddGalleryImage}
-                                        className="px-4 py-2.5 bg-[#2c1654] text-white font-bold text-xs rounded-xl hover:opacity-90 transition-opacity shrink-0 cursor-pointer"
-                                    >
-                                        Add URL
-                                    </button>
-                                </div>
                             </div>
 
                             {/* Gallery Preview List */}

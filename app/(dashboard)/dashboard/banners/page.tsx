@@ -70,14 +70,20 @@ export default function BannersPage() {
                             <input type="text" placeholder="e.g. Up to 70% Off on all products" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Banner Image (Cloudinary File or URL) *</label>
-                            <div className="flex items-center gap-2 mb-2">
-                                <label className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-[#2c1654] font-bold text-xs rounded-xl cursor-pointer transition-colors flex items-center gap-1.5 border border-purple-100 shrink-0">
-                                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin text-purple-600" /> : <Upload className="w-4 h-4 text-amber-500" />}
-                                    {isUploading ? "Uploading..." : "Upload File"}
+                            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Banner Image (Upload File) *</label>
+                            <div className="flex flex-col gap-2 mb-2">
+                                <label className="px-4 py-3 bg-[#2c1654] hover:bg-[#3d2073] text-white font-bold text-xs rounded-xl cursor-pointer transition-colors flex items-center justify-center gap-2 shadow-md">
+                                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin text-amber-400" /> : <Upload className="w-4 h-4 text-amber-400" />}
+                                    {isUploading ? "Uploading to Cloudinary..." : "+ Upload Banner Photo"}
                                     <input type="file" accept="image/*" onChange={handleImageFileChange} disabled={isUploading} className="hidden" />
                                 </label>
-                                <input type="text" placeholder="https://res.cloudinary.com/..." value={image} onChange={(e) => setImage(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]" />
+                                {image && (
+                                    <div className="p-2 border border-purple-100 rounded-xl bg-purple-50 flex items-center gap-3">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={image} alt="Banner Preview" className="w-12 h-8 object-cover rounded-lg" />
+                                        <span className="text-[10px] font-mono text-purple-900 truncate">{image}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div>
