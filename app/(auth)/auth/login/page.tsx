@@ -2,29 +2,42 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
 import { useAppDispatch } from "@/redux/hooks";
 import { setUser } from "@/redux/features/auth/authSlice";
 
+const loginSchema = z.object({
+    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type LoginFields = z.infer<typeof loginSchema>;
+
 export default function LoginPage() {
     const dispatch = useAppDispatch();
     const router = useRouter();
-    const [login, { isLoading, error }] = useLoginMutation();
-
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [login, { isLoading }] = useLoginMutation();
     const [errorMessage, setErrorMessage] = useState("");
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setErrorMessage("");
-        if (!email || !password) {
-            setErrorMessage("All fields are required");
-            return;
-        }
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFields>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: "",
+            password: "",
+        },
+    });
 
+    const onSubmit = async (data: LoginFields) => {
+        setErrorMessage("");
         try {
-            const res = await login({ email, password }).unwrap();
+            const res = await login({ email: data.email, password: data.password }).unwrap();
             if (res?.success) {
                 dispatch(setUser({ user: res.data.user, token: res.data.accessToken }));
                 router.push("/dashboard");
@@ -43,7 +56,7 @@ export default function LoginPage() {
                 <p className="text-sm text-gray-400 mt-1">Please sign in to your account</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 {errorMessage && (
                     <div className="p-3 bg-red-950/50 border border-red-500/30 text-red-200 text-sm rounded-lg">
                         {errorMessage}
@@ -57,12 +70,13 @@ export default function LoginPage() {
                     <input
                         id="email"
                         type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        {...register("email")}
                         placeholder="you@example.com"
                         className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
-                        required
                     />
+                    {errors.email && (
+                        <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>
+                    )}
                 </div>
 
                 <div>
@@ -80,12 +94,13 @@ export default function LoginPage() {
                     <input
                         id="password"
                         type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        {...register("password")}
                         placeholder="••••••••"
                         className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
-                        required
                     />
+                    {errors.password && (
+                        <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>
+                    )}
                 </div>
 
                 <button

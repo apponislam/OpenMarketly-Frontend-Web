@@ -2,9 +2,24 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useRegisterMutation } from "@/redux/features/auth/authApi";
 import { useAppDispatch } from "@/redux/hooks";
 import { setUser } from "@/redux/features/auth/authSlice";
+
+const registerSchema = z.object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    role: z.enum(["CUSTOMER", "SELLER"]),
+    phone: z.string().optional(),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"]),
+    referralCode: z.string().optional(),
+});
+
+type RegisterFields = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
     const dispatch = useAppDispatch();
@@ -14,19 +29,32 @@ export default function RegisterPage() {
     const [step, setStep] = useState(1);
     const [errorMessage, setErrorMessage] = useState("");
 
-    // Step 1 fields
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [role, setRole] = useState<"CUSTOMER" | "SELLER">("CUSTOMER");
-
-    // Step 2 fields
-    const [phone, setPhone] = useState("");
-    const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
-    const [referralCode, setReferralCode] = useState("");
+    // Custom state for file upload
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+
+    const {
+        register: registerField,
+        handleSubmit,
+        trigger,
+        formState: { errors },
+        setValue,
+        watch,
+    } = useForm<RegisterFields>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            name: "",
+            email: "",
+            password: "",
+            role: "CUSTOMER",
+            phone: "",
+            gender: "MALE",
+            referralCode: "",
+        },
+    });
+
+    const activeRole = watch("role");
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -36,18 +64,18 @@ export default function RegisterPage() {
         }
     };
 
-    const handleNextStep = (e: React.FormEvent) => {
+    const handleNextStep = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMessage("");
-        if (!name || !email || !password) {
-            setErrorMessage("Please fill in all credentials");
-            return;
+        
+        // Trigger validation for step 1 fields
+        const isValid = await trigger(["name", "email", "password"]);
+        if (isValid) {
+            setStep(2);
         }
-        setStep(2);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = async (data: RegisterFields) => {
         setErrorMessage("");
         setIsUploading(true);
 
@@ -72,11 +100,11 @@ export default function RegisterPage() {
                     body: formData,
                 });
 
-                const data = await response.json();
-                if (data.secure_url) {
-                    uploadedImageUrl = data.secure_url;
+                const uploadData = await response.json();
+                if (uploadData.secure_url) {
+                    uploadedImageUrl = uploadData.secure_url;
                 } else {
-                    throw new Error(data.error?.message || "Failed to upload image to Cloudinary");
+                    throw new Error(uploadData.error?.message || "Failed to upload image to Cloudinary");
                 }
             } catch (err: any) {
                 setErrorMessage(err.message || "Failed to upload profile image");
@@ -90,14 +118,14 @@ export default function RegisterPage() {
         // 2. Perform Backend Registration
         try {
             const res = await register({
-                name,
-                email,
-                password,
-                role,
-                phone: phone || undefined,
-                gender,
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                role: data.role,
+                phone: data.phone || undefined,
+                gender: data.gender,
                 profileImage: uploadedImageUrl || undefined,
-                referralCode: referralCode || undefined,
+                referralCode: data.referralCode || undefined,
             }).unwrap();
 
             if (res?.success) {
@@ -135,12 +163,13 @@ export default function RegisterPage() {
                         <input
                             id="name"
                             type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            {...registerField("name")}
                             placeholder="John Doe"
                             className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
-                            required
                         />
+                        {errors.name && (
+                            <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>
+                        )}
                     </div>
 
                     <div>
@@ -150,12 +179,13 @@ export default function RegisterPage() {
                         <input
                             id="email"
                             type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            {...registerField("email")}
                             placeholder="you@example.com"
                             className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
-                            required
                         />
+                        {errors.email && (
+                            <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>
+                        )}
                     </div>
 
                     <div>
@@ -165,12 +195,13 @@ export default function RegisterPage() {
                         <input
                             id="password"
                             type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            {...registerField("password")}
                             placeholder="••••••••"
                             className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
-                            required
                         />
+                        {errors.password && (
+                            <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>
+                        )}
                     </div>
 
                     <div>
@@ -180,9 +211,9 @@ export default function RegisterPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <button
                                 type="button"
-                                onClick={() => setRole("CUSTOMER")}
+                                onClick={() => setValue("role", "CUSTOMER")}
                                 className={`py-3 px-4 rounded-xl text-sm font-semibold border transition duration-200 ${
-                                    role === "CUSTOMER"
+                                    activeRole === "CUSTOMER"
                                         ? "bg-[#2c1654] border-[#c8960c] text-white"
                                         : "bg-[#1e1633] border-white/10 text-gray-400"
                                 }`}
@@ -191,9 +222,9 @@ export default function RegisterPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setRole("SELLER")}
+                                onClick={() => setValue("role", "SELLER")}
                                 className={`py-3 px-4 rounded-xl text-sm font-semibold border transition duration-200 ${
-                                    role === "SELLER"
+                                    activeRole === "SELLER"
                                         ? "bg-[#2c1654] border-[#c8960c] text-white"
                                         : "bg-[#1e1633] border-white/10 text-gray-400"
                                 }`}
@@ -211,7 +242,7 @@ export default function RegisterPage() {
                     </button>
                 </form>
             ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="flex flex-col items-center mb-4">
                         <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                             Profile Picture
@@ -239,11 +270,13 @@ export default function RegisterPage() {
                         <input
                             id="phone"
                             type="text"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            {...registerField("phone")}
                             placeholder="+1 (555) 000-0000"
                             className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
                         />
+                        {errors.phone && (
+                            <p className="text-xs text-red-400 mt-1">{errors.phone.message}</p>
+                        )}
                     </div>
 
                     <div>
@@ -252,14 +285,16 @@ export default function RegisterPage() {
                         </label>
                         <select
                             id="gender"
-                            value={gender}
-                            onChange={(e: any) => setGender(e.target.value)}
+                            {...registerField("gender")}
                             className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
                         >
                             <option value="MALE">Male</option>
                             <option value="FEMALE">Female</option>
                             <option value="OTHER">Other</option>
                         </select>
+                        {errors.gender && (
+                            <p className="text-xs text-red-400 mt-1">{errors.gender.message}</p>
+                        )}
                     </div>
 
                     <div>
@@ -269,11 +304,13 @@ export default function RegisterPage() {
                         <input
                             id="referral"
                             type="text"
-                            value={referralCode}
-                            onChange={(e) => setReferralCode(e.target.value)}
+                            {...registerField("referralCode")}
                             placeholder="CODE123"
                             className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
                         />
+                        {errors.referralCode && (
+                            <p className="text-xs text-red-400 mt-1">{errors.referralCode.message}</p>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 mt-6">
