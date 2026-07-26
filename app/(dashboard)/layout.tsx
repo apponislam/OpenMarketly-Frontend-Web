@@ -19,6 +19,7 @@ import {
     MessageSquare,
     HelpCircle,
     ShieldCheck,
+    FolderTree,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -59,6 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const navigation = isAdmin
         ? [
               { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+              { name: "Categories", href: "/dashboard/categories", icon: FolderTree },
               { name: "Products", href: "/dashboard/products", icon: Package },
               { name: "Orders", href: "/dashboard/orders", icon: ShoppingCart },
               { name: "Withdrawals", href: "/dashboard/withdrawals", icon: CreditCard },
