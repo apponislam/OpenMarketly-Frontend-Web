@@ -36,7 +36,7 @@ export default function BannersPage() {
     };
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto font-sans">
+        <div className="space-y-8 w-full font-sans">
             <DashboardPageHeader title="Hero Slider Banners" subtitle="Configure promotional slide banners appearing on storefront homepage." />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

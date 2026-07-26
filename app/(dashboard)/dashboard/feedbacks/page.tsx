@@ -27,7 +27,7 @@ export default function FeedbacksPage() {
     };
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto font-sans">
+        <div className="space-y-8 w-full font-sans">
             <DashboardPageHeader title="App Feedback & Bug Reports" subtitle="Track and respond to user-submitted feedback, bug reports, and features requests." />
 
             <DashboardCard title="Feedback Inbox" headerRight={<MessageSquare className="h-5 w-5 text-[#2c1654]" />}>

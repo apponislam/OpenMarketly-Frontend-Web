@@ -43,7 +43,7 @@ export default function OrdersManagement() {
     });
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto">
+        <div className="space-y-8 w-full">
             <DashboardPageHeader title="Orders Management" subtitle="Track, filter, update, and manage all user orders." />
 
             {/* Tabs & Search */}

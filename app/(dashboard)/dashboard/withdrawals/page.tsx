@@ -9,8 +9,8 @@ import {
     useGetAllWithdrawRequestsQuery,
     useResolveWithdrawRequestMutation,
 } from "@/redux/features/withdraw/withdrawApi";
-import { Plus, Send } from "lucide-react";
-import { DashboardPageHeader, DashboardCard, StatusBadge } from "@/components/dashboard";
+import { DollarSign, Clock, CheckCircle2, Plus, Send } from "lucide-react";
+import { DashboardPageHeader, DashboardCard, StatCard, StatusBadge } from "@/components/dashboard";
 
 export default function WithdrawalsPage() {
     const user = useAppSelector(currentUser);
@@ -31,10 +31,42 @@ export default function WithdrawalsPage() {
 
     const withdraws = isAdmin ? adminData?.data || [] : sellerData?.data || [];
 
+    // Calculate payouts stats
+    const pendingWithdrawalsAmount = withdraws
+        .filter((w: any) => w.status === "PENDING")
+        .reduce((sum: number, curr: any) => sum + curr.amount, 0);
+
+    const approvedWithdrawalsAmount = withdraws
+        .filter((w: any) => w.status === "APPROVED")
+        .reduce((sum: number, curr: any) => sum + curr.amount, 0);
+
+    const formattedBalance = Number(user?.balance || 0).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+    const formattedPending = Number(pendingWithdrawalsAmount).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+    const formattedApproved = Number(approvedWithdrawalsAmount).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+    const sellerStats = [
+        { name: "Available Balance", value: `৳ ${formattedBalance}`, change: "Ready for payout request", icon: DollarSign, color: "bg-emerald-500/10 text-emerald-600" },
+        { name: "Pending Cashout", value: `৳ ${formattedPending}`, change: "Awaiting admin review", icon: Clock, color: "bg-amber-500/10 text-amber-600" },
+        { name: "Completed Payouts", value: `৳ ${formattedApproved}`, change: "Total lifetime cashout", icon: CheckCircle2, color: "bg-[#2c1654]/10 text-[#2c1654]" },
+    ];
+
     const handleCreateRequest = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg(""); setSuccessMsg("");
         if (!amount || Number(amount) <= 0) { setErrorMsg("Please enter a valid amount."); return; }
+        if (Number(amount) > Number(user?.balance || 0)) { setErrorMsg("Entered amount exceeds your available balance."); return; }
+
         try {
             await createWithdraw({ amount: Number(amount), paymentMethod: method, paymentDetails: details }).unwrap();
             setSuccessMsg("Withdraw request submitted successfully!");
@@ -50,11 +82,20 @@ export default function WithdrawalsPage() {
     };
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto font-sans">
+        <div className="space-y-8 w-full font-sans">
             <DashboardPageHeader
                 title="Withdrawal Requests"
                 subtitle={isAdmin ? "Review, approve or reject seller payout requests." : "Request payouts and track your withdrawal history."}
             />
+
+            {/* Seller Balance Summary Cards */}
+            {!isAdmin && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    {sellerStats.map((stat, i) => (
+                        <StatCard key={i} {...stat} />
+                    ))}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Seller: Create Request Form */}
@@ -62,7 +103,9 @@ export default function WithdrawalsPage() {
                     <DashboardCard title="Request Payout" headerRight={<Plus className="h-5 w-5 text-[#2c1654]" />} className="h-fit">
                         <form onSubmit={handleCreateRequest} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Amount (BDT)</label>
+                                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                                    Amount (BDT) <span className="text-[#c8960c] font-bold">(Available: ৳ {formattedBalance})</span>
+                                </label>
                                 <input type="number" placeholder="e.g. 5000" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]" />
                             </div>
                             <div>
@@ -80,7 +123,7 @@ export default function WithdrawalsPage() {
                             {errorMsg && <p className="text-xs text-red-500 font-semibold">{errorMsg}</p>}
                             {successMsg && <p className="text-xs text-emerald-500 font-semibold">{successMsg}</p>}
                             <button type="submit" disabled={isCreating} className="w-full py-3 bg-[#2c1654] text-white font-bold text-sm rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer">
-                                <Send className="h-4 w-4" /> {isCreating ? "Submitting..." : "Submit Request"}
+                                <Send className="h-4 w-4 text-amber-400" /> {isCreating ? "Submitting..." : "Submit Payout Request"}
                             </button>
                         </form>
                     </DashboardCard>
@@ -104,7 +147,7 @@ export default function WithdrawalsPage() {
                                 {withdraws.map((request) => (
                                     <tr key={request._id} className="hover:bg-gray-50/50 transition-colors">
                                         {isAdmin && <td className="px-4 py-3.5 font-semibold text-[#2c1654]">{request.sellerId?.name || "Unknown Seller"}</td>}
-                                        <td className="px-4 py-3.5 text-gray-900 font-bold">৳ {request.amount}</td>
+                                        <td className="px-4 py-3.5 text-gray-900 font-bold">৳ {request.amount?.toLocaleString()}</td>
                                         <td className="px-4 py-3.5 text-xs font-medium text-gray-600">{request.paymentMethod}</td>
                                         <td className="px-4 py-3.5 text-xs text-gray-500 max-w-xs truncate">{request.paymentDetails}</td>
                                         <td className="px-4 py-3.5"><StatusBadge status={request.status} /></td>

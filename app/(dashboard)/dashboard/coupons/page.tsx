@@ -64,7 +64,7 @@ export default function CouponsPage() {
     };
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto font-sans">
+        <div className="space-y-8 w-full font-sans">
             <DashboardPageHeader title="Coupon Campaign Codes" subtitle="Manage discounts, percentage off and flat rates coupon codes." />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

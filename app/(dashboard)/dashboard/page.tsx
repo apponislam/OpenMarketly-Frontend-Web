@@ -54,10 +54,10 @@ function AdminOverview({ user, products, withdraws, visitors, disputes, logs }: 
     const pendingProducts = products?.data?.filter((p: any) => p.approvalStatus === "PENDING").slice(0, 4) || [];
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto font-sans">
+        <div className="space-y-8 w-full font-sans">
             <DashboardPageHeader
                 title="Platform Administration"
-                subtitle={`Hello ${user.name}, you are logged in as a ${user.role}. Here is the platform activity log.`}
+                subtitle={`Hello ${user.name}, you are logged in as a ${user.role}. Here is the platform activity overview.`}
             />
 
             {/* Stats */}
@@ -106,7 +106,7 @@ function AdminOverview({ user, products, withdraws, visitors, disputes, logs }: 
                                         )}
                                         <div>
                                             <div className="font-semibold text-sm text-gray-900 group-hover:text-[#2c1654] transition-colors line-clamp-1">{product.name}</div>
-                                            <div className="text-xs text-gray-500">Price: ৳ {product.price}</div>
+                                            <div className="text-xs text-gray-500">Price: ৳ {product.price?.toLocaleString()}</div>
                                         </div>
                                     </div>
                                     <StatusBadge status="PENDING" />
@@ -128,21 +128,31 @@ function SellerOverview({ user, products, withdraws }: any) {
     const totalWithdrawalsCount = withdraws?.data?.length || 0;
     const pendingWithdrawalsAmount = withdraws?.data?.filter((w: any) => w.status === "PENDING")?.reduce((sum: number, curr: any) => sum + curr.amount, 0) || 0;
 
+    const formattedBalance = Number(user.balance || 0).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+    const formattedPendingCashout = Number(pendingWithdrawalsAmount).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
     const stats = [
-        { name: "Your Payout Balance", value: `৳ ${user.balance || 0}`, change: "Available for withdrawal", icon: DollarSign, color: "bg-emerald-500/10 text-emerald-600" },
+        { name: "Your Payout Balance", value: `৳ ${formattedBalance}`, change: "Available for withdrawal", icon: DollarSign, color: "bg-emerald-500/10 text-emerald-600" },
         { name: "Products Listed", value: totalProducts, change: "Active inventory", icon: Package, color: "bg-blue-500/10 text-blue-600" },
-        { name: "Pending Cashout", value: `৳ ${pendingWithdrawalsAmount}`, change: "Awaiting approval", icon: Clock, color: "bg-amber-500/10 text-amber-600" },
+        { name: "Pending Cashout", value: `৳ ${formattedPendingCashout}`, change: "Awaiting approval", icon: Clock, color: "bg-amber-500/10 text-amber-600" },
         { name: "Payout Requests", value: totalWithdrawalsCount, change: "Lifetime payout counts", icon: ShoppingBag, color: "bg-purple-500/10 text-purple-600" },
     ];
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto font-sans">
+        <div className="space-y-8 w-full font-sans">
             <DashboardPageHeader
                 title="Seller Dashboard"
                 subtitle={`Welcome back, ${user.name}. Manage your inventory listings, earnings, and payout requests here.`}
             />
 
-            {/* Stats */}
+            {/* Stats Grid - Full Width */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {stats.map((stat, i) => (
                     <StatCard key={i} {...stat} />
@@ -151,33 +161,33 @@ function SellerOverview({ user, products, withdraws }: any) {
 
             {/* Preview sections */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <DashboardCard title="Your Inventory Preview" headerRight={<span className="text-xs text-gray-500">{totalProducts} active products</span>} className="lg:col-span-2">
+                <DashboardCard title="Your Inventory Preview" headerRight={<span className="text-xs text-gray-500 font-semibold">{totalProducts} active products</span>} className="lg:col-span-2">
                     <div className="divide-y divide-gray-100">
                         {products?.data && products.data.length > 0 ? (
                             products.data.slice(0, 5).map((product: any) => (
-                                <div key={product._id} className="py-3 flex justify-between items-center hover:bg-gray-50/50 transition-colors px-2 rounded-xl">
-                                    <div className="flex items-center gap-3">
+                                <div key={product._id} className="py-3.5 flex justify-between items-center hover:bg-gray-50/50 transition-colors px-2 rounded-xl">
+                                    <div className="flex items-center gap-3.5">
                                         {product.thumbnail ? (
                                             // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={product.thumbnail} alt={product.name} className="h-10 w-10 rounded-lg object-cover" />
+                                            <img src={product.thumbnail} alt={product.name} className="h-11 w-11 rounded-xl object-cover border border-gray-100" />
                                         ) : (
-                                            <div className="h-10 w-10 rounded-lg bg-[#2c1654]/10 flex items-center justify-center text-[#2c1654]">
+                                            <div className="h-11 w-11 rounded-xl bg-[#2c1654]/10 flex items-center justify-center text-[#2c1654]">
                                                 <Package className="h-5 w-5" />
                                             </div>
                                         )}
                                         <div>
-                                            <p className="text-sm font-semibold text-gray-900">{product.name}</p>
+                                            <p className="text-sm font-bold text-gray-900">{product.name}</p>
                                             <p className="text-xs text-gray-500">Brand: {product.brand || "Generic"} • Stock: {product.stockQuantity}</p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-bold text-gray-900">৳ {product.price}</p>
+                                    <div className="text-right space-y-1">
+                                        <p className="text-sm font-black text-gray-900">৳ {product.price?.toLocaleString()}</p>
                                         <StatusBadge status={product.approvalStatus} />
                                     </div>
                                 </div>
                             ))
                         ) : (
-                            <p className="text-sm text-gray-400 py-6 text-center">You have not listed any products yet.</p>
+                            <p className="text-sm text-gray-400 py-8 text-center">You have not listed any products yet.</p>
                         )}
                     </div>
                 </DashboardCard>
@@ -186,16 +196,16 @@ function SellerOverview({ user, products, withdraws }: any) {
                     <div className="space-y-4">
                         {withdraws?.data && withdraws.data.length > 0 ? (
                             withdraws.data.slice(0, 4).map((request: any) => (
-                                <div key={request._id} className="flex justify-between items-center py-1">
+                                <div key={request._id} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900">৳ {request.amount}</p>
-                                        <p className="text-[10px] text-gray-500">{request.paymentMethod}</p>
+                                        <p className="text-sm font-bold text-gray-900">৳ {request.amount?.toLocaleString()}</p>
+                                        <p className="text-[10px] font-semibold text-gray-400">{request.paymentMethod}</p>
                                     </div>
                                     <StatusBadge status={request.status} />
                                 </div>
                             ))
                         ) : (
-                            <p className="text-sm text-gray-400 py-6 text-center">No cashout requests raised yet.</p>
+                            <p className="text-sm text-gray-400 py-8 text-center">No cashout requests raised yet.</p>
                         )}
                     </div>
                 </DashboardCard>

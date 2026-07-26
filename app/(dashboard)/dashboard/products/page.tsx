@@ -50,7 +50,7 @@ export default function ProductsManagement() {
     });
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto">
+        <div className="space-y-8 w-full">
             <DashboardPageHeader
                 title="Products Management"
                 subtitle="View, add, edit, or delete items from your store."
