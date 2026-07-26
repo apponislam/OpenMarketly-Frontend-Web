@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateProductMutation } from "@/redux/features/product/productApi";
-import { useGetAllCategoriesQuery } from "@/redux/features/category/categoryApi";
+import { useGetParentCategoriesQuery, useGetSubcategoriesQuery } from "@/redux/features/category/categoryApi";
 import { DashboardPageHeader, DashboardCard } from "@/components/dashboard";
 import {
     ArrowLeft,
@@ -24,15 +24,22 @@ import {
 export default function CreateProductPage() {
     const router = useRouter();
     const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
-    const { data: categoriesData } = useGetAllCategoriesQuery();
-    const categories = categoriesData?.data || [];
+    const { data: parentCategoriesData } = useGetParentCategoriesQuery();
+    const parentCategories = parentCategoriesData?.data || [];
 
     // Basic Details
     const [name, setName] = useState("");
     const [brand, setBrand] = useState("");
-    const [category, setCategory] = useState("");
+    const [parentCategory, setParentCategory] = useState("");
+    const [subCategory, setSubCategory] = useState("");
     const [sku, setSku] = useState("");
     const [unit, setUnit] = useState("Piece");
+
+    // Fetch subcategories when parent category is selected!
+    const { data: subCategoriesData } = useGetSubcategoriesQuery(parentCategory, {
+        skip: !parentCategory,
+    });
+    const subCategories = subCategoriesData?.data || [];
 
     // Pricing & Inventory
     const [price, setPrice] = useState("");
@@ -73,33 +80,6 @@ export default function CreateProductPage() {
 
     // Messages
     const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-    // Local helper to extract parent ID
-    const getParentId = (c: any): string | null => {
-        if (!c || !c.parentCategory) return null;
-        return typeof c.parentCategory === "object" ? c.parentCategory._id || null : c.parentCategory;
-    };
-
-    // Recursive helper to render infinite multi-level categories in select dropdown
-    const renderRecursiveCategoryOptions = (parentId: string | null = null, depth: number = 0): React.ReactNode[] => {
-        const children = categories.filter((c) => getParentId(c) === parentId);
-        let options: React.ReactNode[] = [];
-
-        children.forEach((cat) => {
-            const indent = "\u00A0\u00A0".repeat(depth * 3);
-            const icon = depth === 0 ? "📁 " : "└── 📂 ";
-            options.push(
-                <option key={cat._id} value={cat._id}>
-                    {indent}{icon}{cat.name}
-                </option>
-            );
-
-            const subOptions = renderRecursiveCategoryOptions(cat._id, depth + 1);
-            options = options.concat(subOptions);
-        });
-
-        return options;
-    };
 
     // Image Upload Handlers
     const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,7 +152,8 @@ export default function CreateProductPage() {
             return;
         }
 
-        if (!category) {
+        const selectedCategory = subCategory || parentCategory;
+        if (!selectedCategory) {
             setStatusMsg({ type: "error", text: "Please select a product category." });
             return;
         }
@@ -197,7 +178,7 @@ export default function CreateProductPage() {
             await createProduct({
                 name: name.trim(),
                 brand: brand.trim() || undefined,
-                category,
+                category: selectedCategory,
                 sku: sku.trim() || undefined,
                 unit: unit.trim() || undefined,
                 price: Number(price),
@@ -279,15 +260,43 @@ export default function CreateProductPage() {
 
                         <div>
                             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                Category / Subcategory *
+                                Parent Category *
                             </label>
                             <select
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
+                                value={parentCategory}
+                                onChange={(e) => {
+                                    setParentCategory(e.target.value);
+                                    setSubCategory("");
+                                }}
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[#2c1654]"
                             >
-                                <option value="">-- Select Category / Subcategory --</option>
-                                {renderRecursiveCategoryOptions()}
+                                <option value="">-- Select Main Parent Category --</option>
+                                {parentCategories.map((p) => (
+                                    <option key={p._id} value={p._id}>
+                                        📁 {p.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Subcategory (Optional)
+                            </label>
+                            <select
+                                value={subCategory}
+                                onChange={(e) => setSubCategory(e.target.value)}
+                                disabled={!parentCategory}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[#2c1654] disabled:bg-gray-50 disabled:cursor-not-allowed"
+                            >
+                                <option value="">
+                                    {parentCategory ? "-- Select Subcategory --" : "-- Select Parent Category First --"}
+                                </option>
+                                {subCategories.map((sub) => (
+                                    <option key={sub._id} value={sub._id}>
+                                        📂 {sub.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 

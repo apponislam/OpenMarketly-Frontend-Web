@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
     useGetParentCategoriesQuery,
     useGetSubcategoriesQuery,
-    useGetAllCategoriesQuery,
     useCreateCategoryMutation,
     useUpdateCategoryMutation,
     useDeleteCategoryMutation,
@@ -30,8 +29,8 @@ import {
 } from "lucide-react";
 
 export default function CategoriesPage() {
-    const { data: parentCategoriesData, refetch: refetchParents } = useGetParentCategoriesQuery();
-    const { data: allCategoriesData, refetch: refetchAll } = useGetAllCategoriesQuery();
+    // 1. Fetch root level parent categories using useGetParentCategoriesQuery -> GET /categories/parents
+    const { data: parentCategoriesData, refetch: refetchParents, isLoading: isLoadingParents } = useGetParentCategoriesQuery();
 
     const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
     const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
@@ -50,12 +49,6 @@ export default function CategoriesPage() {
     const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     const rootCategories = parentCategoriesData?.data || [];
-    const allCategories = allCategoriesData?.data || [];
-
-    const getParentId = (c: ICategory): string | null => {
-        if (!c || !c.parentCategory) return null;
-        return typeof c.parentCategory === "object" ? c.parentCategory._id || null : c.parentCategory;
-    };
 
     const handleOpenCreateModal = (presetParentId?: string) => {
         setEditingCategory(null);
@@ -71,7 +64,8 @@ export default function CategoriesPage() {
     const handleEditClick = (cat: ICategory) => {
         setEditingCategory(cat);
         setName(cat.name);
-        setParentCategory(getParentId(cat) || "");
+        const parentId = typeof cat.parentCategory === "object" ? cat.parentCategory?._id : cat.parentCategory || "";
+        setParentCategory(parentId);
         setDescription(cat.description || "");
         setImage(cat.image || "");
         setImagePreview(cat.image || "");
@@ -126,7 +120,6 @@ export default function CategoriesPage() {
             setTimeout(() => {
                 setShowModal(false);
                 refetchParents();
-                refetchAll();
             }, 1000);
         } catch (err: any) {
             setStatusMsg({ type: "error", text: err?.data?.message || err?.message || "Failed to save category." });
@@ -134,36 +127,14 @@ export default function CategoriesPage() {
     };
 
     const handleDelete = async (id: string, name: string) => {
-        if (confirm(`Are you sure you want to delete "${name}" and all its nested subcategories?`)) {
+        if (confirm(`Are you sure you want to delete "${name}" and all its subcategories?`)) {
             try {
                 await deleteCategory(id).unwrap();
                 refetchParents();
-                refetchAll();
             } catch (err: any) {
                 alert(err?.data?.message || "Failed to delete category.");
             }
         }
-    };
-
-    const renderCategorySelectOptions = (parentId: string | null = null, depth: number = 0): React.ReactNode[] => {
-        const children = allCategories.filter((c) => getParentId(c) === parentId);
-        let options: React.ReactNode[] = [];
-
-        children.forEach((cat) => {
-            if (editingCategory && cat._id === editingCategory._id) return;
-
-            const prefix = "— ".repeat(depth);
-            options.push(
-                <option key={cat._id} value={cat._id}>
-                    {prefix} {depth === 0 ? "📁 " : "📂 "} {cat.name}
-                </option>
-            );
-
-            const subOptions = renderCategorySelectOptions(cat._id, depth + 1);
-            options = options.concat(subOptions);
-        });
-
-        return options;
     };
 
     const filteredRoots = rootCategories.filter((root) => {
@@ -174,8 +145,8 @@ export default function CategoriesPage() {
     return (
         <div className="space-y-8 w-full font-sans pb-12">
             <DashboardPageHeader
-                title="Nested Categories Manager"
-                subtitle="Root level categories fetched first via GET /categories/parents; hit parent to load subcategories via GET /categories/subcategories/:parentId."
+                title="Categories Management"
+                subtitle="Root categories loaded via GET /categories/parents; subcategories loaded on hit via GET /categories/subcategories/:parentId."
                 action={
                     <button
                         onClick={() => handleOpenCreateModal()}
@@ -186,38 +157,41 @@ export default function CategoriesPage() {
                 }
             />
 
-            {/* Search Bar & Summary Pills */}
+            {/* Search Bar & Summary */}
             <div className="bg-white p-5 rounded-3xl border border-purple-100/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                 <SearchInput value={search} onChange={setSearch} placeholder="Search root categories..." className="w-full sm:w-80" />
                 <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
                     <span className="bg-purple-50 text-[#2c1654] px-3.5 py-1.5 rounded-xl border border-purple-100">
-                        📁 {rootCategories.length} Main Root Categories
-                    </span>
-                    <span className="bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-xl border border-amber-200">
-                        📂 {allCategories.length - rootCategories.length} Total Subcategories
+                        📁 {rootCategories.length} Root Categories
                     </span>
                 </div>
             </div>
 
             {/* Root Category Tree List */}
             <div className="space-y-4">
-                {filteredRoots.map((root) => (
-                    <CategoryTreeNode
-                        key={root._id}
-                        category={root}
-                        depth={0}
-                        onAddSubcategory={handleOpenCreateModal}
-                        onEdit={handleEditClick}
-                        onDelete={handleDelete}
-                    />
-                ))}
+                {isLoadingParents ? (
+                    <div className="bg-white rounded-3xl p-12 text-center border border-purple-100/80 shadow-sm text-purple-700 font-bold flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" /> Loading root categories...
+                    </div>
+                ) : (
+                    filteredRoots.map((root) => (
+                        <CategoryTreeNode
+                            key={root._id}
+                            category={root}
+                            depth={0}
+                            onAddSubcategory={handleOpenCreateModal}
+                            onEdit={handleEditClick}
+                            onDelete={handleDelete}
+                        />
+                    ))
+                )}
 
-                {filteredRoots.length === 0 && (
+                {!isLoadingParents && filteredRoots.length === 0 && (
                     <div className="bg-white rounded-3xl p-12 text-center border border-purple-100/80 shadow-sm space-y-3">
                         <FolderTree className="w-10 h-10 text-gray-300 mx-auto" />
                         <h4 className="font-bold text-gray-800 text-base">No Root Categories Found</h4>
                         <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                            Get started by clicking &quot;Create Root Category&quot; above to add your first top-level product category.
+                            Click &quot;Create Root Category&quot; above to add your first main product category.
                         </p>
                     </div>
                 )}
@@ -272,19 +246,20 @@ export default function CategoriesPage() {
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                                    Parent Category (Multi-Level Hierarchy)
+                                    Parent Category (Choose Root)
                                 </label>
                                 <select
                                     value={parentCategory}
                                     onChange={(e) => setParentCategory(e.target.value)}
                                     className="w-full px-4 py-3 bg-[#f8f7fc] border border-purple-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#2c1654]"
                                 >
-                                    <option value="">-- Top-Level Root Category --</option>
-                                    {renderCategorySelectOptions()}
+                                    <option value="">-- Main Root Category --</option>
+                                    {rootCategories.map((r) => (
+                                        <option key={r._id} value={r._id}>
+                                            📁 {r.name}
+                                        </option>
+                                    ))}
                                 </select>
-                                <p className="text-[10px] text-gray-400 mt-1">
-                                    Select any category level to nest under it.
-                                </p>
                             </div>
 
                             <div>
@@ -302,7 +277,7 @@ export default function CategoriesPage() {
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                                    Category Icon / Photo
+                                    Category Photo
                                 </label>
                                 <div className="flex items-center gap-3">
                                     <div className="w-14 h-14 rounded-2xl border border-purple-100 overflow-hidden bg-purple-50 flex items-center justify-center shrink-0">
@@ -345,6 +320,7 @@ export default function CategoriesPage() {
     );
 }
 
+// 2. Fetch subcategories directly using useGetSubcategoriesQuery -> GET /categories/subcategories/:parentId on hit!
 interface CategoryTreeNodeProps {
     category: ICategory;
     depth: number;
@@ -362,6 +338,7 @@ function CategoryTreeNode({
 }: CategoryTreeNodeProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
+    // Call GET /categories/subcategories/:parentId when hit/expanded
     const { data: subcategoryResponse, isLoading: isLoadingSubs } = useGetSubcategoriesQuery(category._id, {
         skip: !isExpanded,
     });
@@ -385,7 +362,7 @@ function CategoryTreeNode({
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
                         className="p-1.5 rounded-xl hover:bg-purple-100/60 text-[#2c1654] transition-colors cursor-pointer flex items-center justify-center"
-                        title={isExpanded ? "Collapse Subcategories" : "Hit to Load Subcategories"}
+                        title={isExpanded ? "Collapse Subcategories" : "Click to load subcategories via GET /categories/subcategories/:parentId"}
                     >
                         {isLoadingSubs ? (
                             <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
@@ -458,7 +435,7 @@ function CategoryTreeNode({
                 <div className="p-3 bg-[#f8f7fc] space-y-2 border-t border-purple-50">
                     {isLoadingSubs ? (
                         <div className="py-4 text-center text-xs font-semibold text-purple-700 flex items-center justify-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-purple-600" /> Loading subcategories...
+                            <Loader2 className="w-4 h-4 animate-spin text-purple-600" /> Loading subcategories from GET /categories/subcategories/{category._id}...
                         </div>
                     ) : subcategories.length > 0 ? (
                         subcategories.map((child) => (
