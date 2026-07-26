@@ -1,6 +1,7 @@
 import { BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { RootState } from "../store";
 import { setUser, logOut, TUser } from "../features/auth/authSlice";
+import { publicRoutes } from "../../utils/publicRoutes";
 
 interface RefreshTokenResponse {
     data: {
@@ -21,9 +22,12 @@ const baseQuery = fetchBaseQuery({
 
 export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
     let result = await baseQuery(args, api, extraOptions);
-    console.log(result);
+    console.log("API Response:", result);
 
-    if (result?.error?.status === 401 || result?.error?.status === 403) {
+    const url = typeof args === "string" ? args : args?.url || "";
+    const isPublicRoute = publicRoutes.some((route) => url.includes(route));
+
+    if (!isPublicRoute && (result?.error?.status === 401 || result?.error?.status === 403)) {
         // console.log("Access token expired. Attempting refresh...");
 
         const refreshResult = await baseQuery({ url: "/auth/refresh-token", method: "POST", credentials: "include" }, api, extraOptions);
@@ -40,11 +44,11 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
                 result = await baseQuery(args, api, extraOptions);
             } else {
                 api.dispatch(logOut());
-                return { error: { status: 401, data: "Session expired" } };
+                return { error: { status: 401, data: { success: false, message: "Session expired" } } };
             }
         } else {
             api.dispatch(logOut());
-            return { error: { status: 401, data: "Session expired" } };
+            return { error: { status: 401, data: { success: false, message: "Session expired" } } };
         }
     }
 

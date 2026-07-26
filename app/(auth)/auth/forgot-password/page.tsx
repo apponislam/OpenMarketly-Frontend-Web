@@ -123,8 +123,11 @@ export default function ForgotPasswordPage() {
 
                     <form onSubmit={handleSendOtp} className="space-y-4">
                         {errorMessage && (
-                            <div className="p-3 bg-red-950/50 border border-red-500/30 text-red-200 text-sm rounded-lg">
-                                {errorMessage}
+                            <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl flex items-start gap-3">
+                                <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>{errorMessage}</span>
                             </div>
                         )}
 
@@ -167,8 +170,11 @@ export default function ForgotPasswordPage() {
 
                     <form onSubmit={handleVerifyOtp} className="space-y-4">
                         {errorMessage && (
-                            <div className="p-3 bg-red-950/50 border border-red-500/30 text-red-200 text-sm rounded-lg">
-                                {errorMessage}
+                            <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl flex items-start gap-3">
+                                <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>{errorMessage}</span>
                             </div>
                         )}
 
@@ -228,8 +234,11 @@ export default function ForgotPasswordPage() {
 
                     <form onSubmit={handleResetPassword} className="space-y-4">
                         {errorMessage && (
-                            <div className="p-3 bg-red-950/50 border border-red-500/30 text-red-200 text-sm rounded-lg">
-                                {errorMessage}
+                            <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl flex items-start gap-3">
+                                <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>{errorMessage}</span>
                             </div>
                         )}
 
