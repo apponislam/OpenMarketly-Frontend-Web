@@ -21,12 +21,30 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
                 <div className="flex items-center gap-3 lg:gap-5">
                     {/* Logo */}
-                    <button onClick={onLogoClick} className="flex items-center gap-2.5 shrink-0 cursor-pointer">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #2c1654, #4a2b8c)" }}>
-                            <span className="text-white font-black text-xs tracking-tighter">OM</span>
+                    <button onClick={onLogoClick} className="flex items-center gap-2.5 shrink-0 cursor-pointer group">
+                        <div className="relative w-10 h-10 flex items-center justify-center">
+                            {/* Glowing back-drop */}
+                            <div className="absolute inset-0 bg-[#c8960c]/25 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <svg className="w-10 h-10 transform transition-all group-hover:scale-110 group-hover:rotate-3 duration-300 relative z-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#2c1654" />
+                                        <stop offset="50%" stopColor="#4a2b8c" />
+                                        <stop offset="100%" stopColor="#c8960c" />
+                                    </linearGradient>
+                                </defs>
+                                {/* Styled background shield / bag */}
+                                <path d="M25 35C25 22 35 12 50 12C65 12 75 22 75 35V72C75 79 69 85 62 85H38C31 85 25 79 25 72V35Z" fill="url(#logoGrad)" />
+                                {/* Handle */}
+                                <path d="M36 32C36 22 41 18 50 18C59 18 64 22 64 32" stroke="white" strokeWidth="5.5" strokeLinecap="round" />
+                                {/* Dynamic abstract overlap letter M */}
+                                <path d="M38 52L50 42L62 52V70H55V59L50 54L45 59V70H38V52Z" fill="white" />
+                                {/* Sparkle / Star point */}
+                                <circle cx="70" cy="30" r="3" fill="#fff" className="animate-pulse" />
+                            </svg>
                         </div>
-                        <span className="text-lg font-black text-gray-900 hidden sm:block">
-                            Open<span style={{ color: "#2c1654" }}>Marketly</span>
+                        <span className="text-xl font-black tracking-tight text-gray-900 hidden sm:block">
+                            Open<span className="bg-gradient-to-r from-[#2c1654] via-[#4a2b8c] to-[#c8960c] bg-clip-text text-transparent">Marketly</span>
                         </span>
                     </button>
                     
