@@ -2,9 +2,10 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../../store";
 
 export const roles = {
-    GUEST: "GUEST" as const,
-    HOST: "HOST" as const,
+    SUPER_ADMIN: "SUPER_ADMIN" as const,
     ADMIN: "ADMIN" as const,
+    SELLER: "SELLER" as const,
+    CUSTOMER: "CUSTOMER" as const,
 };
 
 export type Role = (typeof roles)[keyof typeof roles];
@@ -13,15 +14,28 @@ export type TUser = {
     _id: string;
     name: string;
     email: string;
-    phone?: string;
     role: Role;
+    balance?: number;
+    gender?: "MALE" | "FEMALE" | "OTHER";
+    phone?: string;
+    profileImage?: string;
+    language?: string;
+    aboutme?: string;
+    referralCode?: string;
+    referredBy?: string;
+    address?: {
+        street?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        country?: string;
+    };
     isActive: boolean;
     isEmailVerified?: boolean;
-    verificationToken?: string;
-    verificationTokenExpiry?: string;
+    isDeleted?: boolean;
+    lastLogin?: string;
     createdAt?: string;
     updatedAt?: string;
-    profileImg?: string;
 };
 
 type TAuthState = {
