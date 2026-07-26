@@ -1,5 +1,7 @@
+"use client";
 import React, { useState } from "react";
 import { Search, ShoppingCart, Heart, MapPin, Globe, User, Package, Menu, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
     onLogoClick: () => void;
@@ -12,6 +14,8 @@ interface HeaderProps {
 
 export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, searchQuery, setSearchQuery }: HeaderProps) {
     const [menuOpen, setMenuOpen] = useState(false);
+    const router = useRouter();
+
     return (
         <header className="bg-white border-b border-purple-100/80 sticky top-0 z-40 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
@@ -25,7 +29,7 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
                             Open<span style={{ color: "#2c1654" }}>Marketly</span>
                         </span>
                     </button>
-
+                    
                     {/* Search */}
                     <div className="flex-1 flex items-center bg-[#f8f7fc] border border-purple-100 rounded-xl overflow-hidden focus-within:border-[#2c1654] focus-within:ring-2 focus-within:ring-purple-100 transition-all">
                         <Search className="w-4 h-4 text-gray-400 ml-3.5 shrink-0" />
@@ -40,7 +44,7 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
                         {[
                             { icon: MapPin, label: "Deliver to", action: undefined },
                             { icon: Globe, label: "EN / BDT", action: undefined },
-                            { icon: User, label: "Sign In", action: undefined },
+                            { icon: User, label: "Sign In", action: () => router.push("/auth/login") },
                             { icon: Heart, label: "Wishlist", action: undefined },
                         ].map(({ icon: Icon, label, action }) => (
                             <button key={label} onClick={action} className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl hover:bg-purple-50 transition-colors group">
@@ -78,12 +82,12 @@ export function Header({ onLogoClick, cartCount, onCartOpen, onShopClick, search
             {menuOpen && (
                 <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1">
                     {[
-                        { icon: User, label: "Sign In / Register" },
-                        { icon: Heart, label: "Wishlist" },
-                        { icon: Package, label: "My Orders" },
-                        { icon: MapPin, label: "Change Location" },
-                    ].map(({ icon: Icon, label }) => (
-                        <button key={label} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-purple-50 text-sm font-semibold text-gray-700 transition-colors">
+                        { icon: User, label: "Sign In / Register", action: () => { setMenuOpen(false); router.push("/auth/login"); } },
+                        { icon: Heart, label: "Wishlist", action: undefined },
+                        { icon: Package, label: "My Orders", action: undefined },
+                        { icon: MapPin, label: "Change Location", action: undefined },
+                    ].map(({ icon: Icon, label, action }) => (
+                        <button key={label} onClick={action} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-purple-50 text-sm font-semibold text-gray-700 transition-colors">
                             <Icon className="w-5 h-5 text-[#2c1654]" /> {label}
                         </button>
                     ))}
