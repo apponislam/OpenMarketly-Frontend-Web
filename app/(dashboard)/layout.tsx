@@ -19,7 +19,11 @@ import {
     Home,
     AlertOctagon,
     History,
-    CreditCard
+    CreditCard,
+    Tag,
+    Image,
+    MessageSquare,
+    HelpCircle
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -78,6 +82,10 @@ export default function DashboardLayout({
               { name: "Orders", href: "/dashboard/orders", icon: ShoppingCart },
               { name: "Withdrawals", href: "/dashboard/withdrawals", icon: CreditCard },
               { name: "Disputes & Tickets", href: "/dashboard/disputes", icon: AlertOctagon },
+              { name: "Banners", href: "/dashboard/banners", icon: Image },
+              { name: "Coupons", href: "/dashboard/coupons", icon: Tag },
+              { name: "Feedbacks", href: "/dashboard/feedbacks", icon: MessageSquare },
+              { name: "FAQs", href: "/dashboard/faqs", icon: HelpCircle },
               { name: "Activity Logs", href: "/dashboard/activity", icon: History },
               { name: "Settings", href: "/dashboard/settings", icon: Settings },
           ]
