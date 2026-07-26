@@ -1,29 +1,26 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAppSelector, useAppDispatch } from "@/redux/hooks";
+import { currentUser, logOut } from "@/redux/features/auth/authSlice";
+import { useLogoutMutation } from "@/redux/features/auth/authApi";
 import {
     LayoutDashboard,
     Package,
     ShoppingCart,
-    Users,
     Settings,
     Menu,
     X,
     Bell,
-    Search,
     ChevronDown,
     LogOut,
-    Home
+    Home,
+    AlertOctagon,
+    History,
+    CreditCard
 } from "lucide-react";
-
-const navigation = [
-    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Products", href: "/dashboard/products", icon: Package },
-    { name: "Orders", href: "/dashboard/orders", icon: ShoppingCart },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
-];
 
 export default function DashboardLayout({
     children,
@@ -31,9 +28,65 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const dispatch = useAppDispatch();
+    const [logoutApi] = useLogoutMutation();
+
+    const user = useAppSelector(currentUser);
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
+    const [authorized, setAuthorized] = useState(false);
+
+    // Redirect guest users or customers
+    useEffect(() => {
+        if (!user) {
+            router.push("/auth/login");
+        } else if (user.role === "CUSTOMER") {
+            router.push("/");
+        } else {
+            setAuthorized(true);
+        }
+    }, [user, router]);
+
+    const handleLogout = async () => {
+        try {
+            await logoutApi().unwrap();
+        } catch (err) {
+            console.error("Logout failed:", err);
+        } finally {
+            dispatch(logOut());
+            router.push("/auth/login");
+        }
+    };
+
+    if (!authorized || !user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#090514]">
+                <div className="w-8 h-8 border-4 border-[#c8960c] border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    const isAdmin = user.role === "SUPER_ADMIN" || user.role === "ADMIN";
+
+    // Setup dynamic navigation based on user roles
+    const navigation = isAdmin
+        ? [
+              { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+              { name: "Products", href: "/dashboard/products", icon: Package },
+              { name: "Orders", href: "/dashboard/orders", icon: ShoppingCart },
+              { name: "Withdrawals", href: "/dashboard/withdrawals", icon: CreditCard },
+              { name: "Disputes & Tickets", href: "/dashboard/disputes", icon: AlertOctagon },
+              { name: "Activity Logs", href: "/dashboard/activity", icon: History },
+              { name: "Settings", href: "/dashboard/settings", icon: Settings },
+          ]
+        : [
+              { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+              { name: "My Products", href: "/dashboard/products", icon: Package },
+              { name: "Withdrawals", href: "/dashboard/withdrawals", icon: CreditCard },
+              { name: "Settings", href: "/dashboard/settings", icon: Settings },
+          ];
 
     return (
         <div className="flex h-screen bg-[#f8f7fc] text-[#0d0a1a] overflow-hidden">
@@ -45,7 +98,7 @@ export default function DashboardLayout({
                             OpenMarketly
                         </span>
                         <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-medium">
-                            Admin
+                            {user.role}
                         </span>
                     </Link>
                 </div>
@@ -80,8 +133,8 @@ export default function DashboardLayout({
                             View Storefront
                         </Link>
                         <button
-                            onClick={() => console.log("Logout")}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-200 transition-all duration-200 text-left"
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-200 transition-all duration-200 text-left cursor-pointer"
                         >
                             <LogOut className="h-5 w-5 flex-shrink-0" />
                             Logout
@@ -138,8 +191,8 @@ export default function DashboardLayout({
                                 View Storefront
                             </Link>
                             <button
-                                onClick={() => console.log("Logout")}
-                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-200 transition-all text-left"
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-200 transition-all text-left cursor-pointer"
                             >
                                 <LogOut className="h-5 w-5" />
                                 Logout
@@ -156,68 +209,39 @@ export default function DashboardLayout({
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setSidebarOpen(true)}
-                            className="p-1 rounded-lg hover:bg-gray-100 md:hidden"
+                            className="p-1 rounded-lg hover:bg-gray-100 md:hidden cursor-pointer"
                         >
                             <Menu className="h-6 w-6 text-gray-600" />
                         </button>
 
-                        <div className="relative hidden sm:block w-64 md:w-80">
-                            <Search className="absolute left-3 top-2.5 h-4.5 w-4.5 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search products, orders..."
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2c1654]/30 bg-[#f8f7fc] transition-colors"
-                            />
+                        <div className="text-sm font-semibold text-gray-700 hidden sm:block">
+                            Dashboard Workspace
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {/* Notifications */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                                className="p-2 rounded-xl hover:bg-gray-100 relative transition-colors"
-                            >
-                                <Bell className="h-5 w-5 text-gray-600" />
-                                <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 bg-amber-500 rounded-full border border-white" />
-                            </button>
-                            {notificationsOpen && (
-                                <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <div className="px-4 py-2 border-b border-gray-100 flex justify-between items-center">
-                                        <span className="font-semibold text-sm">Notifications</span>
-                                        <button className="text-xs text-[#c8960c] hover:underline">Mark all read</button>
-                                    </div>
-                                    <div className="max-h-64 overflow-y-auto">
-                                        <div className="px-4 py-3 hover:bg-gray-50 border-b border-gray-50 cursor-pointer">
-                                            <p className="text-xs font-semibold">New Order #1048</p>
-                                            <p className="text-[11px] text-gray-500 mt-0.5">By Shakil Ahmed • 2 mins ago</p>
-                                        </div>
-                                        <div className="px-4 py-3 hover:bg-gray-50 border-b border-gray-50 cursor-pointer">
-                                            <p className="text-xs font-semibold">Product Stock Alert</p>
-                                            <p className="text-[11px] text-gray-500 mt-0.5">Sony WH-1000XM5 is low in stock • 1 hour ago</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
                         {/* Profile Dropdown */}
                         <div className="relative">
                             <button
                                 onClick={() => setProfileOpen(!profileOpen)}
-                                className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors"
+                                className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
                             >
-                                <div className="h-8 w-8 rounded-full bg-[#2c1654]/10 flex items-center justify-center font-semibold text-[#2c1654]">
-                                    A
-                                </div>
-                                <span className="text-sm font-medium hidden md:block">Admin</span>
+                                {user.profileImage ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={user.profileImage} alt={user.name} className="h-8 w-8 rounded-full object-cover" />
+                                ) : (
+                                    <div className="h-8 w-8 rounded-full bg-[#2c1654]/10 flex items-center justify-center font-semibold text-[#2c1654] uppercase">
+                                        {user.name.charAt(0)}
+                                    </div>
+                                )}
+                                <span className="text-sm font-medium hidden md:block">{user.name}</span>
                                 <ChevronDown className="h-4 w-4 text-gray-500 hidden md:block" />
                             </button>
                             {profileOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
                                     <div className="px-4 py-2 border-b border-gray-100">
-                                        <p className="text-xs text-gray-500">Signed in as</p>
-                                        <p className="text-sm font-semibold text-gray-800">admin@openmarketly.com</p>
+                                        <p className="text-[10px] text-gray-500 uppercase font-semibold">{user.role}</p>
+                                        <p className="text-sm font-semibold text-gray-800 truncate">{user.email}</p>
                                     </div>
                                     <Link
                                         href="/dashboard/settings"
@@ -227,8 +251,8 @@ export default function DashboardLayout({
                                         Settings
                                     </Link>
                                     <button
-                                        onClick={() => console.log("Logout")}
-                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                        onClick={handleLogout}
+                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
                                     >
                                         Logout
                                     </button>
