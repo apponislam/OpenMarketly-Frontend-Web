@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateProductMutation } from "@/redux/features/product/productApi";
-import { useGetAllCategoriesQuery, getParentId } from "@/redux/features/category/categoryApi";
+import { useGetAllCategoriesQuery } from "@/redux/features/category/categoryApi";
 import { DashboardPageHeader, DashboardCard } from "@/components/dashboard";
 import {
     ArrowLeft,
@@ -73,6 +73,12 @@ export default function CreateProductPage() {
 
     // Messages
     const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+    // Local helper to extract parent ID
+    const getParentId = (c: any): string | null => {
+        if (!c || !c.parentCategory) return null;
+        return typeof c.parentCategory === "object" ? c.parentCategory._id || null : c.parentCategory;
+    };
 
     // Recursive helper to render infinite multi-level categories in select dropdown
     const renderRecursiveCategoryOptions = (parentId: string | null = null, depth: number = 0): React.ReactNode[] => {

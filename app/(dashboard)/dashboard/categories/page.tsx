@@ -9,7 +9,6 @@ import {
     useUpdateCategoryMutation,
     useDeleteCategoryMutation,
     ICategory,
-    getParentId,
 } from "@/redux/features/category/categoryApi";
 import { DashboardPageHeader, SearchInput } from "@/components/dashboard";
 import {
@@ -31,9 +30,7 @@ import {
 } from "lucide-react";
 
 export default function CategoriesPage() {
-    // 1. Fetch root level parent categories directly via GET /api/v1/categories/parents
     const { data: parentCategoriesData, refetch: refetchParents } = useGetParentCategoriesQuery();
-    // 2. Fetch all categories for search & form parent select dropdown
     const { data: allCategoriesData, refetch: refetchAll } = useGetAllCategoriesQuery();
 
     const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
@@ -54,6 +51,11 @@ export default function CategoriesPage() {
 
     const rootCategories = parentCategoriesData?.data || [];
     const allCategories = allCategoriesData?.data || [];
+
+    const getParentId = (c: ICategory): string | null => {
+        if (!c || !c.parentCategory) return null;
+        return typeof c.parentCategory === "object" ? c.parentCategory._id || null : c.parentCategory;
+    };
 
     const handleOpenCreateModal = (presetParentId?: string) => {
         setEditingCategory(null);
@@ -143,7 +145,6 @@ export default function CategoriesPage() {
         }
     };
 
-    // Recursive helper to render options for parent category dropdown in modal
     const renderCategorySelectOptions = (parentId: string | null = null, depth: number = 0): React.ReactNode[] => {
         const children = allCategories.filter((c) => getParentId(c) === parentId);
         let options: React.ReactNode[] = [];
@@ -165,7 +166,6 @@ export default function CategoriesPage() {
         return options;
     };
 
-    // Filter root categories for search
     const filteredRoots = rootCategories.filter((root) => {
         if (!search.trim()) return true;
         return root.name.toLowerCase().includes(search.toLowerCase());
@@ -345,7 +345,6 @@ export default function CategoriesPage() {
     );
 }
 
-// === Node Component that fetches subcategories on hit via GET /categories/subcategories/:parentId ===
 interface CategoryTreeNodeProps {
     category: ICategory;
     depth: number;
@@ -363,7 +362,6 @@ function CategoryTreeNode({
 }: CategoryTreeNodeProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Fetch subcategories directly from backend endpoint /api/v1/categories/subcategories/:parentId when expanded!
     const { data: subcategoryResponse, isLoading: isLoadingSubs } = useGetSubcategoriesQuery(category._id, {
         skip: !isExpanded,
     });
@@ -380,7 +378,6 @@ function CategoryTreeNode({
             }`}
             style={{ marginLeft: depth > 0 ? `${Math.min(depth * 20, 80)}px` : "0px" }}
         >
-            {/* Category Row Header */}
             <div className="p-4 sm:p-5 flex items-center justify-between gap-4 border-b border-purple-50/50">
                 <div className="flex items-center gap-3">
                     {depth > 0 && <CornerDownRight className="w-4 h-4 text-purple-400 shrink-0" />}
@@ -431,7 +428,6 @@ function CategoryTreeNode({
                     </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={() => onAddSubcategory(category._id)}
@@ -458,7 +454,6 @@ function CategoryTreeNode({
                 </div>
             </div>
 
-            {/* Render Subcategories when hit/expanded */}
             {isExpanded && (
                 <div className="p-3 bg-[#f8f7fc] space-y-2 border-t border-purple-50">
                     {isLoadingSubs ? (
