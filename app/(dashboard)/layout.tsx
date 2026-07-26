@@ -18,6 +18,7 @@ import {
     Image,
     MessageSquare,
     HelpCircle,
+    ShieldCheck,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -65,6 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               { name: "Banners", href: "/dashboard/banners", icon: Image },
               { name: "Coupons", href: "/dashboard/coupons", icon: Tag },
               { name: "Feedbacks", href: "/dashboard/feedbacks", icon: MessageSquare },
+              { name: "Policies", href: "/dashboard/policies", icon: ShieldCheck },
               { name: "FAQs", href: "/dashboard/faqs", icon: HelpCircle },
               { name: "Activity Logs", href: "/dashboard/activity", icon: History },
               { name: "Settings", href: "/dashboard/settings", icon: Settings },
