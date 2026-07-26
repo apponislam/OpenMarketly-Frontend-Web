@@ -12,6 +12,17 @@ export interface ICategory {
     updatedAt?: string;
 }
 
+export const getParentId = (c: ICategory): string | null => {
+    if (!c || !c.parentCategory) return null;
+    if (typeof c.parentCategory === "object" && c.parentCategory !== null) {
+        return c.parentCategory._id || null;
+    }
+    if (typeof c.parentCategory === "string" && c.parentCategory.trim() !== "") {
+        return c.parentCategory;
+    }
+    return null;
+};
+
 type ApiResponse<T> = {
     success: boolean;
     message: string;

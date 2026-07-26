@@ -7,12 +7,12 @@ import {
     useUpdateCategoryMutation,
     useDeleteCategoryMutation,
     ICategory,
+    getParentId,
 } from "@/redux/features/category/categoryApi";
-import { DashboardPageHeader, DashboardCard, SearchInput } from "@/components/dashboard";
+import { DashboardPageHeader, SearchInput } from "@/components/dashboard";
 import {
     FolderTree,
     Folder,
-    FolderOpen,
     Plus,
     Edit,
     Trash2,
@@ -25,7 +25,6 @@ import {
     CornerDownRight,
     Tag,
     X,
-    Layers,
 } from "lucide-react";
 
 export default function CategoriesPage() {
@@ -49,14 +48,8 @@ export default function CategoriesPage() {
 
     const categories = categoriesData?.data || [];
 
-    // Helper to get string ID of parent
-    const getParentId = (c: ICategory) => {
-        if (!c.parentCategory) return null;
-        return typeof c.parentCategory === "object" ? c.parentCategory._id : c.parentCategory;
-    };
-
-    // Root categories (level 0)
-    const rootCategories = categories.filter((c) => !getParentId(c));
+    // Root categories (level 0 - where parentCategory is null or undefined)
+    const rootCategories = categories.filter((c) => getParentId(c) === null);
 
     // Get direct children of a given parentId
     const getChildrenOf = (parentId: string) =>
@@ -158,7 +151,6 @@ export default function CategoriesPage() {
         let options: React.ReactNode[] = [];
 
         children.forEach((cat) => {
-            // Prevent selecting self as parent when editing
             if (editingCategory && cat._id === editingCategory._id) return;
 
             const prefix = "— ".repeat(depth);
@@ -168,7 +160,6 @@ export default function CategoriesPage() {
                 </option>
             );
 
-            // Recurse for deeper children
             const subOptions = renderCategorySelectOptions(cat._id, depth + 1);
             options = options.concat(subOptions);
         });
@@ -180,7 +171,6 @@ export default function CategoriesPage() {
     const filteredRoots = rootCategories.filter((root) => {
         if (!search.trim()) return true;
 
-        // Check if root or any descendant matches search
         const isMatchRecursive = (cat: ICategory): boolean => {
             if (cat.name.toLowerCase().includes(search.toLowerCase())) return true;
             const children = getChildrenOf(cat._id);
@@ -389,15 +379,9 @@ function CategoryTreeNode({
     onEdit,
     onDelete,
 }: CategoryTreeNodeProps) {
-    const getParentId = (c: ICategory) => {
-        if (!c.parentCategory) return null;
-        return typeof c.parentCategory === "object" ? c.parentCategory._id : c.parentCategory;
-    };
-
     const children = allCategories.filter((c) => getParentId(c) === category._id);
     const hasChildren = children.length > 0;
     const isExpanded = expandedIds[category._id] ?? false;
-
     const isRoot = depth === 0;
 
     return (

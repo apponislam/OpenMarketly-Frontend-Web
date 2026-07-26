@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateProductMutation } from "@/redux/features/product/productApi";
-import { useGetAllCategoriesQuery } from "@/redux/features/category/categoryApi";
+import { useGetAllCategoriesQuery, getParentId } from "@/redux/features/category/categoryApi";
 import { DashboardPageHeader, DashboardCard } from "@/components/dashboard";
 import {
     ArrowLeft,
@@ -75,11 +75,6 @@ export default function CreateProductPage() {
     const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     // Recursive helper to render infinite multi-level categories in select dropdown
-    const getParentId = (c: any) => {
-        if (!c.parentCategory) return null;
-        return typeof c.parentCategory === "object" ? c.parentCategory._id : c.parentCategory;
-    };
-
     const renderRecursiveCategoryOptions = (parentId: string | null = null, depth: number = 0): React.ReactNode[] => {
         const children = categories.filter((c) => getParentId(c) === parentId);
         let options: React.ReactNode[] = [];
