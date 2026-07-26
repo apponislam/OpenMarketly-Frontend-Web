@@ -1,16 +1,18 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     useForgotPasswordMutation,
     useVerifyOtpMutation,
     useResetPasswordMutation,
+    useResendOtpMutation,
 } from "@/redux/features/auth/authApi";
 
 export default function ForgotPasswordPage() {
     const [forgotPassword, { isLoading: isSendingOtp }] = useForgotPasswordMutation();
     const [verifyOtp, { isLoading: isVerifyingOtp }] = useVerifyOtpMutation();
     const [resetPassword, { isLoading: isResettingPassword }] = useResetPasswordMutation();
+    const [resendOtp, { isLoading: isResendingOtp }] = useResendOtpMutation();
 
     const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 1: Email, 2: OTP, 3: Reset Pass, 4: Success
     const [errorMessage, setErrorMessage] = useState("");
@@ -19,6 +21,16 @@ export default function ForgotPasswordPage() {
     const [resetToken, setResetToken] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [timer, setTimer] = useState(0);
+
+    useEffect(() => {
+        if (step === 2 && timer > 0) {
+            const interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [step, timer]);
 
     const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -32,6 +44,7 @@ export default function ForgotPasswordPage() {
             const res = await forgotPassword({ email }).unwrap();
             if (res?.success) {
                 setStep(2);
+                setTimer(30);
             } else {
                 setErrorMessage(res?.message || "Failed to send OTP");
             }
@@ -58,6 +71,20 @@ export default function ForgotPasswordPage() {
             }
         } catch (err: any) {
             setErrorMessage(err?.data?.message || "Incorrect OTP");
+        }
+    };
+
+    const handleResendOtp = async () => {
+        setErrorMessage("");
+        try {
+            const res = await resendOtp({ email }).unwrap();
+            if (res?.success) {
+                setTimer(30);
+            } else {
+                setErrorMessage(res?.message || "Failed to resend OTP");
+            }
+        } catch (err: any) {
+            setErrorMessage(err?.data?.message || "Failed to resend OTP");
         }
     };
 
@@ -111,7 +138,7 @@ export default function ForgotPasswordPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="you@example.com"
-                                className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
+                                className="w-full bg-[#1e1633] border border-transparent rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
                                 required
                             />
                         </div>
@@ -155,7 +182,7 @@ export default function ForgotPasswordPage() {
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value)}
                                 placeholder="123456"
-                                className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200 tracking-[0.5em] text-center font-bold"
+                                className="w-full bg-[#1e1633] border border-transparent rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200 tracking-[0.5em] text-center font-bold"
                                 required
                             />
                         </div>
@@ -171,6 +198,23 @@ export default function ForgotPasswordPage() {
                                 "Verify Code"
                             )}
                         </button>
+
+                        <div className="text-center mt-6 text-sm">
+                            {timer > 0 ? (
+                                <p className="text-gray-400">
+                                    Resend code in <span className="text-[#c8960c] font-bold">{timer}s</span>
+                                </p>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleResendOtp}
+                                    disabled={isResendingOtp}
+                                    className="text-[#c8960c] hover:underline font-semibold transition duration-200 disabled:opacity-50"
+                                >
+                                    {isResendingOtp ? "Resending..." : "Resend Code"}
+                                </button>
+                            )}
+                        </div>
                     </form>
                 </div>
             )}
@@ -199,7 +243,7 @@ export default function ForgotPasswordPage() {
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
+                                className="w-full bg-[#1e1633] border border-transparent rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
                                 required
                             />
                         </div>
@@ -214,7 +258,7 @@ export default function ForgotPasswordPage() {
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="w-full bg-[#1e1633] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
+                                className="w-full bg-[#1e1633] border border-transparent rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#c8960c] transition duration-200"
                                 required
                             />
                         </div>
